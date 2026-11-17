@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Layers, ChevronRight } from 'lucide-react';
 import { catalogApi } from '../services/api';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 import type { Brand } from '../types';
 import styles from './BrandPage.module.css';
 
@@ -22,6 +23,13 @@ export default function BrandPage() {
       .catch(() => setError('Failed to load brand data.'))
       .finally(() => setLoading(false));
   }, [brandSlug]);
+
+  usePageMetadata(
+    brand ? `${brand.name} Models & Parts — AutoParts` : 'Vehicle Brand — AutoParts',
+    brand
+      ? `Browse ${brand.name} models and model years. Decode a ${brand.name} VIN to identify the exact trim, engine, and options.`
+      : 'Browse automotive brands and models, then decode a VIN to identify your exact vehicle.',
+  );
 
   if (loading) return (
     <div className={styles.page}>

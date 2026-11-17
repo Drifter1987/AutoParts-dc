@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ChevronRight, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 import type { Brand } from '../types';
 import styles from './CatalogPage.module.css';
 
@@ -13,6 +14,11 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState('All');
   const query = searchParams.get('q') || '';
+
+  usePageMetadata(
+    'Vehicle Catalog — AutoParts',
+    'Browse automotive brands and models by region to find your vehicle, then decode its VIN for exact specifications.',
+  );
 
   const setQuery = (value: string) => {
     setSearchParams(

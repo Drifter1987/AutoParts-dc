@@ -5,6 +5,7 @@ import VINScanner from '../components/ui/VINScanner';
 import VehicleCard from '../components/ui/VehicleCard';
 import { vinApi, catalogApi } from '../services/api';
 import { findCatalogBrand } from '../services/catalog';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 import type { NhtsaMakeResult } from '../services/nhtsa';
 import type { Brand, VINDecodeResult } from '../types';
 import styles from './VINDecoderPage.module.css';
@@ -31,6 +32,11 @@ export default function VINDecoderPage() {
 
   const urlVin = searchParams.get('vin');
   const lastUrlVin = useRef<string | null>(null);
+
+  usePageMetadata(
+    'VIN Decoder — AutoParts',
+    'Decode a 17-character VIN with the free NHTSA vPIC database to see make, model, year, engine, trim, and plant details.',
+  );
 
   // Load years
   useEffect(() => {

@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Wrench, ArrowLeft } from 'lucide-react';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 import styles from './NotFoundPage.module.css';
 
 export default function NotFoundPage() {
+  usePageMetadata(
+    'Page Not Found — AutoParts',
+    'The page you requested could not be found. Return to AutoParts to decode a VIN or browse the vehicle catalog.',
+  );
+
   return (
     <div className={styles.page}>
       <div className={styles.content}>

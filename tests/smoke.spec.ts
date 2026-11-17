@@ -320,3 +320,62 @@ test.describe('accessibility', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 });
+
+test.describe('page metadata', () => {
+  test.beforeEach(async ({ page }) => {
+    await stubNhtsa(page);
+  });
+
+  test('sets a unique title and description for each route', async ({ page }) => {
+    const routes = [
+      {
+        path: '/',
+        title: 'AutoParts — VIN Decoder & Vehicle Catalog',
+        description:
+          'Decode a VIN free and explore vehicle specifications and parts catalogs for automotive brands.',
+      },
+      {
+        path: '/vin',
+        title: 'VIN Decoder — AutoParts',
+        description:
+          'Decode a 17-character VIN with the free NHTSA vPIC database to see make, model, year, engine, trim, and plant details.',
+      },
+      {
+        path: '/catalog',
+        title: 'Vehicle Catalog — AutoParts',
+        description:
+          'Browse automotive brands and models by region to find your vehicle, then decode its VIN for exact specifications.',
+      },
+      {
+        path: '/catalog/honda',
+        title: 'Honda Models & Parts — AutoParts',
+        description:
+          'Browse Honda models and model years. Decode a Honda VIN to identify the exact trim, engine, and options.',
+      },
+      {
+        path: '/not-a-real-page',
+        title: 'Page Not Found — AutoParts',
+        description:
+          'The page you requested could not be found. Return to AutoParts to decode a VIN or browse the vehicle catalog.',
+      },
+    ];
+
+    const titles = new Set<string>();
+    const descriptions = new Set<string>();
+
+    for (const route of routes) {
+      await page.goto(route.path);
+      await expect(page).toHaveTitle(route.title);
+
+      const meta = page.locator('meta[name="description"]');
+      await expect(meta).toHaveCount(1);
+      await expect(meta).toHaveAttribute('content', route.description);
+
+      titles.add(route.title);
+      descriptions.add((await meta.getAttribute('content')) ?? '');
+    }
+
+    expect(titles.size).toBe(routes.length);
+    expect(descriptions.size).toBe(routes.length);
+  });
+});

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Zap, Database, Box, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 import type { PopularModel } from '../types';
 import styles from './HomePage.module.css';
 
@@ -16,6 +17,11 @@ export default function HomePage() {
   const [models, setModels] = useState<PopularModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
   const navigate = useNavigate();
+
+  usePageMetadata(
+    'AutoParts — VIN Decoder & Vehicle Catalog',
+    'Decode a VIN free and explore vehicle specifications and parts catalogs for automotive brands.',
+  );
 
   useEffect(() => {
     catalogApi.getPopularModels()
