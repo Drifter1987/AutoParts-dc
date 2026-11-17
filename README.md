@@ -2,8 +2,10 @@
 
 > A proprietary automotive OEM parts catalog modeled after 7zap.com — a React + TypeScript SPA with zero paid dependencies.
 
-![Phase](https://img.shields.io/badge/Phase-1%20Complete-brightgreen)
+![Phase](https://img.shields.io/badge/Vertical%20slice-2020%20Civic-brightgreen)
 ![Stack](https://img.shields.io/badge/stack-React%20%2B%20TypeScript%20%2B%20Vite-informational)
+
+> **Data honesty:** the 2020 Civic catalog in this repository is a representative product-development slice, not licensed OEM data. Verify every part number and fitment with a dealer. See [`docs/parts-provenance.md`](docs/parts-provenance.md).
 
 ---
 
@@ -12,12 +14,12 @@
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | VIN Decoder + Vehicle Lookup | ✅ Complete |
-| 2 | Parts Catalog Database & Navigation | 🔜 Next |
-| 3 | 2D Exploded Diagrams & Viewer | ⏳ Planned |
+| 2 | Parts Catalog Database & Navigation | 🟡 2020 Civic vertical slice live (36 parts) |
+| 3 | 2D Exploded Diagrams & Viewer | 🟡 One representative Civic diagram live |
 | 4 | 3D Exploded Views (Three.js + glTF) | ⏳ Planned |
-| 5 | Advanced Search, Compatibility & AI | ⏳ Planned |
+| 5 | Advanced Search, Compatibility & AI | 🟡 OEM/alias search live; AI planned |
 | 6 | User Accounts, Pricing & Marketplace | ⏳ Planned |
-| 7 | Scaling, Performance & Polish | ⏳ Planned |
+| 7 | Scale licensed data, performance & SEO | 🟡 Prerender, sitemap, canonical/OG/JSON-LD live |
 
 ---
 
@@ -28,15 +30,15 @@
 | Frontend | React 19 + TypeScript + Vite | Free |
 | Routing | React Router v7 | Free |
 | VIN API | NHTSA vPIC (US Gov) | Free |
-| Catalog data | Bundled JSON (`src/data/`) | Free |
-| Database | Supabase PostgreSQL | Free tier |
-| Auth | Supabase Auth | Free tier |
-| Storage | Supabase Storage | Free tier |
-| 3D Viewer | Three.js | Free |
-| CAD | FreeCAD + Blender | Free |
-| Hosting | GitHub Pages (live) / Vercel | Free |
+| Recalls | NHTSA recalls API (US Gov) | Free |
+| Catalog data | Bundled JSON (`src/data/`) + validator | Free |
+| Search | Client-side OEM/alias/name search | Free |
+| Local storage | `localStorage` My Garage + last VIN cache | Free |
+| Offline | Web app manifest + service worker | Free |
+| Analytics/errors | Optional `VITE_TELEMETRY_ENDPOINT` boundary | Free |
+| Hosting | GitHub Pages (live) | Free |
 
-> Phase 1 has no server component. VIN decoding calls NHTSA vPIC directly from the browser, and catalog data is bundled from `src/data/` — there is no separate API service or duplicated seed data.
+> There is no server component. VIN decoding and recall lookup call NHTSA directly from the browser; catalog data is bundled from `src/data/`. There is no Supabase/FastAPI/admin backend in the current app.
 
 ---
 
@@ -54,24 +56,24 @@ npm run dev
 
 Then open: **http://localhost:5173**
 
-No environment variables or API keys are needed — NHTSA vPIC is public.
+No environment variables or API keys are needed — NHTSA vPIC and recalls are public. Analytics is disabled unless `VITE_TELEMETRY_ENDPOINT` is set to a collector that accepts POSTed JSON.
 
 ---
 
-## 🧪 Testing Phase 1
+## 🧪 Testing the app
 
 1. Open the app at http://localhost:5173
-2. Enter a real VIN number, e.g.:
-   - Toyota Camry: `4T1BF3EK8AU561547`
-   - Ford F-150: `1FTFW1ET5DFC43861`
-   - Honda Civic: `2HGFC2F59JH531528`
-3. Click **Decode VIN** — vehicle specs should appear
-4. Or use the Make/Model/Year dropdowns
-5. Check the "Popular Models" cards for quick navigation
+2. Decode a VIN. Use the 2020 Civic fixture below to exercise the full handoff:
+   - 2020 Honda Civic: `2HGFC2F59LH500001` (deterministic test fixture; not a real registration lookup)
+   - Other decoder examples: `4T1BF3EK8AU561547`, `1FTFW1ET5DFC43861`
+3. Click **Decode VIN** — specs, recall lookup, and the exact Civic parts CTA should appear
+4. Or use the Make/Model/Year dropdowns and select 2020 Honda Civic
+5. Try the vertical slice: model year → assembly → part, fitment selects, OEM search
+6. Use **Save to My Garage**, **Share**, and **Print parts sheet** to test local workflows
 
 ### Automated smoke tests
 
-The Playwright smoke tests cover VIN decoding (including check-digit advisories and undecodable VINs), catalog search, and the header/mobile quick search.
+The Playwright smoke tests cover VIN decoding (including check-digit advisories and undecodable VINs), the VIN → Civic handoff, model/assembly/part navigation, fitment filters, OEM-number search, recalls, My Garage, catalog search, and the header/mobile quick search.
 
 ```bash
 # Install dependencies (includes @playwright/test)
@@ -101,22 +103,23 @@ The suite starts or reuses the Vite dev server on `http://127.0.0.1:5173` and us
 
 Deployment is handled by [`.github/workflows/pages.yml`](.github/workflows/pages.yml), which runs on pushes to `main` and on manual dispatch. It:
 
-1. Builds the app for the project path: `npm run build -- --base=/AutoParts-fb/`
-2. Copies `dist/index.html` to `dist/404.html` as the SPA fallback
-3. Uploads `dist/` and deploys it with `actions/deploy-pages`
+1. Runs `npm run validate:parts` and builds with `npm run build -- --base=/AutoParts-fb/`
+2. Installs Chromium and runs `npm run prerender` with `PRERENDER_BASE=/AutoParts-fb/`
+3. Uploads the prerendered `dist/` and deploys it with `actions/deploy-pages`
+4. Runs the deployed no-JavaScript metadata smoke test
 
-The React Router basename comes from `import.meta.env.BASE_URL`, so links and assets stay under `/AutoParts-fb/` in production while local development and Vercel keep the `/` base.
+Every catalog, brand, model, assembly, part, search, and 404 route is emitted as static HTML with its own title, description, canonical URL, Open Graph/Twitter tags, and JSON-LD. GitHub Pages serves those directory indexes as static 200 responses except for the explicit 404 route. `sitemap.xml` is generated by the prerender step; `robots.txt` points to it.
 
-GitHub Pages serves `404.html` for direct deep links such as `/AutoParts-fb/catalog`. The response status is 404, but the app shell loads and the route renders client-side.
+The React Router basename comes from `import.meta.env.BASE_URL`, so links and assets stay under `/AutoParts-fb/` in production while local development keeps the `/` base.
 
-### Frontend → Vercel
+### Other static hosts
 
 ```bash
 npm run build
-# Push to GitHub, connect the repo to Vercel — the project root is the app root
+npm run prerender
 ```
 
-Build output is the static `dist/` folder. Because routing is client-side, configure a rewrite from `/*` to `/index.html` so deep links resolve.
+Serve `dist/` as static files. If the host does not resolve directory indexes, configure extensions or rewrites to serve each route’s `index.html`.
 
 ---
 
@@ -159,13 +162,18 @@ When a run fails, it uploads the HTML Playwright report and test results as arti
 ```
 autoparts/
 ├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Route-level pages
-│   ├── services/       # NHTSA client + local catalog data access
-│   ├── data/           # brands.json, popular-models.json (single source)
+│   ├── components/     # UI, VIN scanner, parts diagram, recall panel
+│   ├── pages/          # Home, VIN, catalog, model year, assembly, part, search, garage
+│   ├── services/       # NHTSA, recalls, parts lookup/search, garage, telemetry
+│   ├── data/           # brands.json, popular-models.json, civic-2020-parts.json
 │   ├── types/          # TypeScript interfaces
-│   └── styles/         # Global CSS
-├── public/
+│   └── styles/         # Global and shared parts CSS
+├── scripts/
+│   ├── validate-parts.mjs   # provenance/schema/duplicate/fitment gate
+│   └── prerender.mjs        # static route HTML + sitemap.xml
+├── docs/               # provenance, usability plan, project status
+├── public/             # favicon, manifest, service worker, robots.txt
+├── tests/              # Playwright smoke + deployed Pages tests
 ├── index.html
 ├── vite.config.ts
 └── package.json
