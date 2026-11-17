@@ -2,6 +2,15 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Car, Fuel, Settings, Gauge, MapPin, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { findCatalogBrand } from '../../services/catalog';
+import {
+  findCatalogVehicleForDecode,
+  getVehicleLabel,
+  getVehiclePath,
+  inferEngineFromVin,
+} from '../../services/parts';
+import SaveVehicleButton from './SaveVehicleButton';
+import ShareButton from './ShareButton';
+import { trackEvent } from '../../services/telemetry';
 import type { Brand, VINDecodeResult } from '../../types';
 import styles from './VehicleCard.module.css';
 
@@ -20,6 +29,15 @@ const PRIORITY_SPECS = [
 export default function VehicleCard({ result, catalogBrands }: VehicleCardProps) {
   const [showAllSpecs, setShowAllSpecs] = useState(false);
   const catalogBrand = findCatalogBrand(catalogBrands, result.make);
+  const catalogVehicle = findCatalogVehicleForDecode(result);
+  const inferredEngine = inferEngineFromVin(result);
+  const partsQuery = new URLSearchParams();
+  if (result.vin) partsQuery.set('vin', result.vin);
+  if (inferredEngine) partsQuery.set('engine', inferredEngine);
+  if (result.trim) partsQuery.set('trim', result.trim);
+  const partsPath = catalogVehicle
+    ? `${getVehiclePath(catalogVehicle)}?${partsQuery.toString()}`
+    : null;
 
   const specs = showAllSpecs
     ? result.all_specs.filter(s => s.value)
@@ -105,12 +123,38 @@ export default function VehicleCard({ result, catalogBrands }: VehicleCardProps)
 
       {/* CTA */}
       <div className={styles.footer}>
-        <p className={styles.footerText}>
-          Found your vehicle — parts catalog coming in Phase 2
-        </p>
-        {catalogBrand ? (
+        <div className={styles.footerCopy}>
+          <p className={styles.footerText}>
+            {catalogVehicle
+              ? `Representative catalog ready for the ${getVehicleLabel(catalogVehicle)}. Verify fitment with your dealer before ordering.`
+              : catalogBrand
+                ? 'This vehicle is in the brand/model preview, but its parts data is not published yet. The live slice covers the 2020 Civic.'
+                : `${result.make || 'This make'} is not in the parts catalog yet. VIN decoding is still fully live.`}
+          </p>
+          <div className={styles.footerActions}>
+            <SaveVehicleButton
+              result={result}
+              className={`btn btn-ghost ${styles.footerAction}`}
+            />
+            <ShareButton className={`btn btn-ghost ${styles.footerAction}`} label="Share VIN" />
+          </div>
+        </div>
+        {catalogVehicle && partsPath ? (
+          <Link
+            to={partsPath}
+            className="btn btn-primary"
+            onClick={() =>
+              trackEvent('vin_catalog_handoff', {
+                vin: result.vin,
+                vehicle: getVehicleLabel(catalogVehicle),
+              })
+            }
+          >
+            Browse {getVehicleLabel(catalogVehicle)} Parts
+          </Link>
+        ) : catalogBrand ? (
           <Link to={`/catalog/${catalogBrand.slug}`} className="btn btn-ghost">
-            Browse {result.make} Parts
+            View {result.make} preview
           </Link>
         ) : (
           <button className="btn btn-ghost" disabled>

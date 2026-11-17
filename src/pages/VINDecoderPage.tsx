@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { List, ChevronDown } from 'lucide-react';
 import VINScanner from '../components/ui/VINScanner';
 import VehicleCard from '../components/ui/VehicleCard';
+import RecallsPanel from '../components/ui/RecallsPanel';
 import { vinApi, catalogApi } from '../services/api';
 import { findCatalogBrand } from '../services/catalog';
+import {
+  findCatalogVehicleForSelection,
+  getVehicleLabel,
+  getVehiclePath,
+} from '../services/parts';
+import { getCachedVinResult, cacheVinResult } from '../services/vinCache';
+import { trackEvent } from '../services/telemetry';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import type { NhtsaMakeResult } from '../services/nhtsa';
 import type { Brand, VINDecodeResult } from '../types';
@@ -12,9 +20,11 @@ import styles from './VINDecoderPage.module.css';
 
 export default function VINDecoderPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [result, setResult] = useState<VINDecodeResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
   const [years, setYears] = useState<number[]>([]);
   const [tab, setTab] = useState<'vin' | 'manual'>('vin');
 
@@ -36,6 +46,16 @@ export default function VINDecoderPage() {
   usePageMetadata(
     'VIN Decoder — AutoParts',
     'Decode a 17-character VIN with the free NHTSA vPIC database to see make, model, year, engine, trim, and plant details.',
+    {
+      canonicalPath: '/vin',
+      jsonLd: {
+        '@type': 'WebApplication',
+        name: 'AutoParts VIN Decoder',
+        applicationCategory: 'AutomotiveApplication',
+        operatingSystem: 'Web',
+        description: 'Free VIN decoder using the NHTSA vPIC database.',
+      },
+    },
   );
 
   // Load years
@@ -117,14 +137,26 @@ export default function VINDecoderPage() {
   const handleDecode = useCallback(async (vin: string) => {
     setLoading(true);
     setError(null);
+    setCachedAt(null);
     setResult(null);
     try {
       const data = await vinApi.decode(vin);
       setResult(data);
+      cacheVinResult(data);
       lastUrlVin.current = vin;
       setSearchParams({ vin });
+      trackEvent('vin_decode_success', { vin, year: data.year, make: data.make, model: data.model });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to decode VIN');
+      const cached = getCachedVinResult(vin);
+      if (cached) {
+        setResult(cached.result);
+        setCachedAt(cached.savedAt);
+        setError('NHTSA is unavailable right now — showing the last locally cached decode for this VIN.');
+        trackEvent('vin_decode_cached_fallback', { vin });
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to decode VIN');
+        trackEvent('vin_decode_failure', { vin, message: err instanceof Error ? err.message : 'unknown' });
+      }
     } finally {
       setLoading(false);
     }
@@ -139,13 +171,21 @@ export default function VINDecoderPage() {
   }, [urlVin, handleDecode]);
 
   const catalogBrand = findCatalogBrand(catalogBrands, selectedMake);
+  const selectedVehicle = findCatalogVehicleForSelection(
+    catalogBrand?.slug,
+    selectedModel,
+    selectedYear,
+  );
   const canBrowseParts = Boolean(selectedMake && selectedModel && catalogBrand);
   const isUncataloguedMake = Boolean(selectedMake && catalogBrands && !catalogBrand);
 
   const handleManualSearch = () => {
     if (!catalogBrand || !selectedModel) return;
-    // Phase 1: navigate to the matching brand page — full lookup in Phase 2
-    window.location.href = `${import.meta.env.BASE_URL}catalog/${catalogBrand.slug}`;
+    if (selectedVehicle) {
+      navigate(getVehiclePath(selectedVehicle));
+      return;
+    }
+    navigate(`/catalog/${catalogBrand.slug}`);
   };
 
   return (
@@ -153,11 +193,12 @@ export default function VINDecoderPage() {
       <div className="container">
         {/* Page header */}
         <div className={styles.pageHeader}>
-          <p className="eyebrow">Phase 1 — Fully Live</p>
+          <p className="eyebrow">VIN Decoder · Live</p>
           <h1 className={styles.title}>VIN Decoder</h1>
           <p className={styles.subtitle}>
-            Enter a 17-character Vehicle Identification Number to decode make, model, engine, and full specs.
-            Powered by the free NHTSA vPIC database.
+            Enter a 17-character Vehicle Identification Number to decode make, model, engine, and
+            full specs. The decoder is powered by the free NHTSA vPIC database; a decoded 2020
+            Honda Civic hands off to the live parts catalog.
           </p>
         </div>
 
@@ -277,14 +318,22 @@ export default function VINDecoderPage() {
                 disabled={!canBrowseParts}
                 onClick={handleManualSearch}
               >
-                {isUncataloguedMake
-                  ? `Parts catalog for ${selectedMake} coming soon`
-                  : `Browse Parts for ${selectedYear} ${selectedMake} ${selectedModel}`}
+                {selectedVehicle
+                  ? `Browse Parts for ${getVehicleLabel(selectedVehicle)}`
+                  : isUncataloguedMake
+                    ? `Parts catalog for ${selectedMake} coming soon`
+                    : catalogBrand
+                      ? `View ${catalogBrand.name} catalog preview`
+                      : `Browse Parts for ${selectedYear} ${selectedMake} ${selectedModel}`}
               </button>
               <span className={styles.manualNote}>
-                {isUncataloguedMake
-                  ? `${selectedMake} isn't in the parts catalog yet — coming in Phase 2`
-                  : 'Full manual lookup available in Phase 2'}
+                {selectedVehicle
+                  ? 'Representative catalog · verify fitment with a Honda dealer'
+                  : isUncataloguedMake
+                    ? `${selectedMake} isn't in the brand/model preview yet`
+                    : catalogBrand
+                      ? `Brand/model preview only — live parts cover the 2020 Civic`
+                      : 'Select a make and model to continue'}
               </span>
             </div>
           </div>
@@ -293,7 +342,14 @@ export default function VINDecoderPage() {
         {/* ── Result ── */}
         {result && (
           <div className={styles.result}>
+            {cachedAt && (
+              <p className={styles.manualNote} style={{ marginBottom: 'var(--space-2)' }}>
+                Cached decode from {new Date(cachedAt).toLocaleString()} — reconnect to refresh
+                NHTSA data.
+              </p>
+            )}
             <VehicleCard result={result} catalogBrands={catalogBrands} />
+            <RecallsPanel result={result} />
           </div>
         )}
 
