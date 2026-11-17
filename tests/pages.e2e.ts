@@ -4,7 +4,7 @@ import { stubNhtsa } from "./nhtsa-stubs";
 
 const PAGES_URL = "https://len-golani.github.io/AutoParts-fb/";
 const BASE_PATH = "/AutoParts-fb/";
-const KNOWN_GOOD_VIN = "1HGCM82633A004352";
+const CIVIC_2020_VIN = "2HGFC2F59LH500001";
 
 test.describe("deployed GitHub Pages", () => {
   test.beforeEach(async ({ page }) => {
@@ -16,22 +16,22 @@ test.describe("deployed GitHub Pages", () => {
     page,
   }) => {
     await page.goto("vin");
-    await page.locator("main").getByRole("textbox").fill(KNOWN_GOOD_VIN);
+    await page.locator("main").getByRole("textbox").fill(CIVIC_2020_VIN);
     await page.getByRole("button", { name: "Decode VIN" }).click();
 
     await expect(
-      page.getByRole("heading", { name: /2003 HONDA Accord/i }),
+      page.getByRole("heading", { name: /2020 HONDA Civic EX/i }),
     ).toBeVisible();
 
-    const browseParts = page.getByRole("link", { name: /Browse HONDA Parts/i });
+    const browseParts = page.getByRole("link", { name: /Browse 2020 Honda Civic Parts/i });
     await expect(browseParts).toHaveAttribute(
       "href",
-      `${BASE_PATH}catalog/honda`,
+      new RegExp(`^${BASE_PATH}catalog/honda/civic/2020\\?vin=${CIVIC_2020_VIN}`),
     );
     await browseParts.click();
-    await expect(page).toHaveURL(new RegExp(`${BASE_PATH}catalog/honda$`));
+    await expect(page).toHaveURL(new RegExp(`${BASE_PATH}catalog/honda/civic/2020`));
     await expect(
-      page.getByRole("heading", { name: "Honda", exact: true }),
+      page.getByRole("heading", { name: "2020 Honda Civic Parts" }),
     ).toBeVisible();
 
     const catalogNav = page
@@ -80,13 +80,31 @@ test.describe("prerendered metadata", () => {
         path: "catalog",
         title: "Vehicle Catalog — AutoParts",
         description:
-          "Browse automotive brands and models by region to find your vehicle, then decode its VIN for exact specifications.",
+          "Browse a preview of 20 automotive brands and 98 models, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.",
       },
       {
         path: "catalog/honda",
         title: "Honda Models & Parts — AutoParts",
         description:
-          "Browse Honda models and model years. Decode a Honda VIN to identify the exact trim, engine, and options.",
+          "Browse the Honda brand and model preview. Decode a Honda VIN to identify the exact trim, engine, and options; live parts data is called out on supported models.",
+      },
+      {
+        path: "catalog/honda/civic/2020",
+        title: "2020 Honda Civic Parts — AutoParts",
+        description:
+          "Browse representative 2020 Honda Civic assemblies and 36 OEM-reference parts. Check fitment, copy part numbers, and verify with a dealer.",
+      },
+      {
+        path: "catalog/honda/civic/2020/brakes",
+        title: "2020 Honda Civic Brakes Parts — AutoParts",
+        description:
+          "9 representative 2020 Honda Civic brakes parts with OEM/reference numbers, fitment notes, and supersession references.",
+      },
+      {
+        path: "catalog/honda/civic/2020/brakes/front-brake-pads",
+        title: "Front Brake Pad Set — 2020 Honda Civic — AutoParts",
+        description:
+          "Front Brake Pad Set (OEM 45022-TBA-A00) for 2020 Honda Civic. Fitment notes, supersessions, interchange references, and provenance. Verify fitment with a dealer.",
       },
       {
         path: "not-a-real-page",

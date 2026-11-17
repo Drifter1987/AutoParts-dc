@@ -63,6 +63,26 @@ const DECODE_FIXTURES: Record<string, Partial<DecodeFixture>> = {
     ErrorCode: '0',
     ErrorText: '0 - VIN decoded clean. Check Digit (9th position) is correct.',
   },
+  '2HGFC2F59LH500001': {
+    Make: 'HONDA',
+    Model: 'Civic',
+    ModelYear: '2020',
+    Trim: 'EX',
+    EngineModel: '1.5L Turbo',
+    FuelTypePrimary: 'Gasoline',
+    TransmissionStyle: 'CVT',
+    DriveType: 'FWD',
+    BodyClass: 'Sedan',
+    Doors: '4',
+    PlantCountry: 'CANADA',
+    PlantCity: 'ALLISTON',
+    VehicleType: 'PASSENGER CAR',
+    Series: 'Civic',
+    DisplacementL: '1.5',
+    EngineCylinders: '4',
+    ErrorCode: '0',
+    ErrorText: '0 - VIN decoded clean. Check Digit (9th position) is correct.',
+  },
   '4T1BF3EK8AU561547': {
     Make: 'TOYOTA',
     Model: 'Camry',
@@ -124,6 +144,29 @@ function vinFromPath(pathname: string, endpoint: string): string {
 
 /** Intercept every NHTSA vPIC call the VIN page makes, including manual makes. */
 export async function stubNhtsa(page: Page): Promise<void> {
+  await page.route(/^https:\/\/api\.nhtsa\.gov\/recalls\//, async route => {
+    await route.fulfill({
+      json: {
+        Count: 1,
+        Message: 'Results returned successfully',
+        results: [
+          {
+            Manufacturer: 'Honda (American Honda Motor Co.)',
+            NHTSACampaignNumber: '21V215000',
+            parkIt: false,
+            parkOutSide: false,
+            overTheAirUpdate: false,
+            ReportReceivedDate: '25/03/2021',
+            Component: 'FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP',
+            Summary: 'The low-pressure fuel pump inside the fuel tank may fail.',
+            Consequence: 'Fuel pump failure can cause an engine stall while driving.',
+            Remedy: 'Honda will replace the fuel pump assembly free of charge.',
+          },
+        ],
+      },
+    });
+  });
+
   await page.route(/^https:\/\/vpic\.nhtsa\.dot\.gov\/api\/vehicles\//, async route => {
     const { pathname } = new URL(route.request().url());
 
