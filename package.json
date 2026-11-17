@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:pages": "playwright test --config=playwright.pages.config.ts"
+    "test:pages": "playwright test --config=playwright.pages.config.ts",
+    "prerender": "node scripts/prerender.mjs"
   },
   "dependencies": {
     "axios": "^1.18.0",

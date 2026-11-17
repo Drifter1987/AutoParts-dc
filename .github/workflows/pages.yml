@@ -38,8 +38,13 @@ jobs:
       - name: Build for GitHub Pages
         run: npm run build -- --base=/AutoParts-fb/
 
-      - name: Add SPA fallback
-        run: cp dist/index.html dist/404.html
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Prerender key routes
+        env:
+          PRERENDER_BASE: /AutoParts-fb/
+        run: npm run prerender
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
