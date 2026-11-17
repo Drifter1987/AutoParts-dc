@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, AlertCircle, Loader2, Camera, X } from 'lucide-react';
+import { trackEvent } from '../../services/telemetry';
 import styles from './VINScanner.module.css';
+
+interface DetectedBarcode {
+  rawValue?: string;
+}
+
+interface BarcodeDetectorLike {
+  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
+}
+
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDetectorLike;
 
 interface VINScannerProps {
   onDecode: (vin: string) => void;
@@ -23,7 +34,13 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
   const [scanning, setScanning] = useState(false);
   const [scanIndex, setScanIndex] = useState(-1);
   const [hintIndex, setHintIndex] = useState(0);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Rotate hint VINs
   useEffect(() => {
@@ -77,6 +94,96 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
     setVin(SAMPLE_VINS[hintIndex]);
     inputRef.current?.focus();
   };
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    setCameraStream(null);
+    setScanOpen(false);
+    setCameraBusy(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    const Detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+    if (!Detector) {
+      setCameraError('VIN barcode scanning is not supported in this browser. Enter the VIN manually or try Chrome/Edge on Android.');
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('Camera access is not available. Enter the VIN manually.');
+      return;
+    }
+    try {
+      new Detector({ formats: ['code_39'] });
+    } catch {
+      setCameraError('This browser cannot scan Code 39 VIN barcodes. Enter the VIN manually.');
+      return;
+    }
+
+    setCameraBusy(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraStream(stream);
+      setScanOpen(true);
+      trackEvent('vin_camera_opened');
+    } catch {
+      setCameraError('Camera permission was denied or no camera is available. Enter the VIN manually.');
+    } finally {
+      setCameraBusy(false);
+    }
+  };
+
+  // Attach the stream after the modal has mounted, then poll frames for a Code 39 VIN.
+  useEffect(() => {
+    if (!scanOpen || !cameraStream) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const Detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+    if (!Detector) return;
+
+    let frame = 0;
+    let cancelled = false;
+    const detector = new Detector({ formats: ['code_39'] });
+
+    video.srcObject = cameraStream;
+    void video.play().catch(() => {});
+
+    const detect = async () => {
+      if (cancelled) return;
+      try {
+        const barcodes = await detector.detect(video);
+        const candidate = barcodes
+          .map(barcode => barcode.rawValue?.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, ''))
+          .find(value => value && value.length === 17);
+        if (candidate) {
+          setVin(candidate);
+          stopCamera();
+          inputRef.current?.focus();
+          trackEvent('vin_camera_scanned');
+          return;
+        }
+      } catch {
+        // A frame can fail while the camera is focusing; keep polling.
+      }
+      frame = requestAnimationFrame(detect);
+    };
+
+    frame = requestAnimationFrame(detect);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [scanOpen, cameraStream]);
+
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+  }, []);
 
   const isValid = vin.length === 17;
   const isActive = loading || scanning;
@@ -190,6 +297,48 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
           <button onClick={useSample} className={styles.hintBtn}>
             {SAMPLE_VINS[hintIndex]}
           </button>
+        </div>
+      )}
+
+      <div className={styles.cameraActions}>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={startCamera}
+          disabled={isActive || cameraBusy}
+        >
+          {cameraBusy ? <Loader2 size={15} className={styles.spin} /> : <Camera size={15} />}
+          {cameraBusy ? 'Opening camera…' : 'Scan VIN with camera'}
+        </button>
+        <span className={styles.cameraHint}>Use the door-jamb or windshield VIN barcode (Code 39).</span>
+      </div>
+      {cameraError && (
+        <p className={styles.cameraError} role="status">{cameraError}</p>
+      )}
+
+      {scanOpen && (
+        <div className={styles.cameraOverlay} role="dialog" aria-modal="true" aria-labelledby="vin-camera-title">
+          <div className={styles.cameraModal}>
+            <div className={styles.cameraHeader}>
+              <div>
+                <h2 id="vin-camera-title" className={styles.cameraTitle}>Scan a VIN barcode</h2>
+                <p className={styles.cameraSub}>Hold the camera steady over the Code 39 barcode.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.cameraClose}
+                onClick={stopCamera}
+                aria-label="Cancel VIN camera scan"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <video ref={videoRef} className={styles.cameraVideo} muted playsInline autoPlay />
+            <div className={styles.cameraFooter}>
+              <span>VIN is 17 characters; I, O, and Q are not used.</span>
+              <button type="button" className="btn btn-ghost" onClick={stopCamera}>Cancel scan</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

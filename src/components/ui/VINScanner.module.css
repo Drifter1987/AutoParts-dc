@@ -265,3 +265,95 @@
   background: rgba(79, 195, 247, 0.2);
   border-color: rgba(79, 195, 247, 0.4);
 }
+
+/* ── Camera scan ────────────────────────────────────────────────────────── */
+.cameraActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.cameraHint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cameraError {
+  font-size: 0.78rem;
+  color: var(--warning);
+  text-align: center;
+}
+
+.cameraOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(5, 7, 10, 0.82);
+}
+
+.cameraModal {
+  width: min(620px, 100%);
+  padding: var(--space-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+}
+
+.cameraHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.cameraTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cameraSub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.cameraClose {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  height: 28px;
+}
+
+.cameraClose:hover {
+  color: var(--amber);
+}
+
+.cameraVideo {
+  display: block;
+  width: 100%;
+  min-height: 240px;
+  max-height: 55vh;
+  background: #000;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.cameraFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
