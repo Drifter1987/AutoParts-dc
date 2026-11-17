@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ChevronRight, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
-import { usePageMetadata } from '../hooks/usePageMetadata';
+import { usePageMetadata, breadcrumbJsonLd } from '../hooks/usePageMetadata';
 import type { Brand } from '../types';
 import styles from './CatalogPage.module.css';
 
@@ -17,7 +17,18 @@ export default function CatalogPage() {
 
   usePageMetadata(
     'Vehicle Catalog — AutoParts',
-    'Browse automotive brands and models by region to find your vehicle, then decode its VIN for exact specifications.',
+    'Browse a preview of 20 automotive brands and 98 models, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.',
+    {
+      canonicalPath: '/catalog',
+      jsonLd: [
+        breadcrumbJsonLd([{ name: 'Catalog', path: '/catalog' }]),
+        {
+          '@type': 'CollectionPage',
+          name: 'AutoParts Vehicle Catalog',
+          description: 'Brand and model preview with a live 2020 Honda Civic parts slice.',
+        },
+      ],
+    },
   );
 
   const setQuery = (value: string) => {
@@ -64,11 +75,33 @@ export default function CatalogPage() {
       <div className="container">
         {/* Header */}
         <div className={styles.pageHeader}>
-          <p className="eyebrow">Parts Catalog</p>
+          <p className="eyebrow">Catalog Preview</p>
           <h1 className={styles.title}>Browse by Brand</h1>
           <p className={styles.subtitle}>
             {brands.length} brands · {brands.reduce((acc, b) => acc + b.models.length, 0)} models indexed
           </p>
+          <p className={styles.subtitle} style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+            This is a brand and model preview, not a complete parts catalog. Parts data is live for
+            the 2020 Honda Civic; other models are being added in later slices.
+          </p>
+        </div>
+
+        <div className={styles.liveSlice}>
+          <div>
+            <p className="eyebrow">Live vertical slice</p>
+            <h2 className={styles.liveTitle}>2020 Honda Civic</h2>
+            <p className={styles.liveText}>
+              4 assemblies · 36 OEM-reference parts · fitment notes · exploded diagram
+            </p>
+          </div>
+          <div className={styles.liveActions}>
+            <Link to="/catalog/honda/civic/2020" className="btn btn-primary">
+              Browse Civic parts
+            </Link>
+            <Link to="/search" className="btn btn-ghost">
+              Search by part number
+            </Link>
+          </div>
         </div>
 
         {/* Search + filter bar */}
@@ -82,6 +115,7 @@ export default function CatalogPage() {
               onChange={e => setQuery(e.target.value)}
             />
           </div>
+          <Link to="/search" className={styles.searchPartsLink}>Search parts by OEM number →</Link>
           <div className={styles.regionTabs}>
             {REGIONS.map(r => (
               <button
@@ -112,7 +146,10 @@ export default function CatalogPage() {
         ) : filtered.length === 0 ? (
           <div className={styles.empty}>
             <Globe size={40} />
-            <p>No brands found for "{query}"</p>
+            <p>No brand or model matches “{query}”.</p>
+            <Link to={`/search?q=${encodeURIComponent(query)}`} className="btn btn-ghost">
+              Search parts and catalog together
+            </Link>
             <button className="btn btn-ghost" onClick={() => { setQuery(''); setRegion('All'); }}>
               Clear filters
             </button>

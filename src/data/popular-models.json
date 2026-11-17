@@ -46,18 +46,18 @@
       "tags": ["Pickup", "4WD", "Best-Seller"]
     },
     {
-      "id": "honda-civic-2023",
+      "id": "honda-civic-2020",
       "brand": "Honda",
       "brand_slug": "honda",
       "model": "Civic",
       "model_slug": "civic",
-      "year": 2023,
+      "year": 2020,
       "image": "/images/models/honda-civic.jpg",
-      "description": "11th generation compact. Available as sedan, hatchback, Si, and Type R.",
-      "engine_options": ["1.5L Turbocharged", "2.0L Naturally Aspirated", "2.0L Turbocharged (Type R)"],
-      "assemblies_count": 44,
-      "parts_count": 1180,
-      "sample_assemblies": ["Engine", "CVT Transmission", "Honda Sensing", "Suspension", "HVAC"],
+      "description": "10th generation compact. The first AutoParts vertical-slice catalog with four assemblies and 36 parts.",
+      "engine_options": ["1.5L Turbo", "2.0L"],
+      "assemblies_count": 4,
+      "parts_count": 36,
+      "sample_assemblies": ["Engine", "Brakes", "Suspension & Steering", "Filters & Maintenance"],
       "tags": ["Compact", "Hatchback Available", "Type R"]
     },
     {

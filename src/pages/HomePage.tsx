@@ -3,14 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Zap, Database, Box, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
 import { usePageMetadata } from '../hooks/usePageMetadata';
-import type { PopularModel } from '../types';
+import { CIVIC_2020, getPartCount } from '../services/parts';
+import brandsData from '../data/brands.json';
+import type { Brand, PopularModel } from '../types';
 import styles from './HomePage.module.css';
 
+const BRANDS = (brandsData as { brands: Brand[] }).brands;
+const BRAND_COUNT = BRANDS.length;
+const MODEL_COUNT = BRANDS.reduce((total, brand) => total + brand.models.length, 0);
+const LIVE_PARTS_COUNT = getPartCount(CIVIC_2020);
+
 const FEATURES = [
-  { icon: <Zap size={20} />, title: 'VIN Decoder', desc: 'Instant identification via NHTSA database — no account needed', href: '/vin' },
-  { icon: <Database size={20} />, title: 'Parts Catalog', desc: '100+ brands, hierarchical navigation from brand → assembly → part', href: '/catalog' },
-  { icon: <Box size={20} />, title: '3D Exploded Views', desc: 'Interactive WebGL diagrams with clickable parts — Coming Phase 4', href: '/vin' },
-  { icon: <Globe size={20} />, title: 'Global Coverage', desc: 'European, Japanese, American, Korean manufacturers', href: '/catalog' },
+  { icon: <Zap size={20} />, title: 'VIN Decoder', desc: 'Instant year, make, model, engine, and trim identification via NHTSA — no account needed', href: '/vin' },
+  { icon: <Database size={20} />, title: 'Brand & Model Preview', desc: `${BRAND_COUNT} brands and ${MODEL_COUNT} models indexed; the 2020 Civic parts slice is live`, href: '/catalog' },
+  { icon: <Box size={20} />, title: '2D Exploded Diagram', desc: 'Numbered, keyboard-accessible hotspots linked to the Civic parts list', href: '/catalog/honda/civic/2020' },
+  { icon: <Globe size={20} />, title: 'Global Coverage', desc: 'European, Japanese, American, and Korean brands in the brand/model preview', href: '/catalog' },
 ];
 
 export default function HomePage() {
@@ -21,6 +28,20 @@ export default function HomePage() {
   usePageMetadata(
     'AutoParts — VIN Decoder & Vehicle Catalog',
     'Decode a VIN free and explore vehicle specifications and parts catalogs for automotive brands.',
+    {
+      canonicalPath: '/',
+      jsonLd: {
+        '@type': 'WebSite',
+        name: 'AutoParts',
+        url: 'https://len-golani.github.io/AutoParts-fb/',
+        description: 'Free VIN decoder and representative automotive parts catalog.',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://len-golani.github.io/AutoParts-fb/search?q={search_term_string}',
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    },
   );
 
   useEffect(() => {
@@ -30,12 +51,17 @@ export default function HomePage() {
       .finally(() => setLoadingModels(false));
   }, []);
 
-  const openModel = (brandSlug: string) => navigate(`/catalog/${brandSlug}`);
+  const modelPath = (model: PopularModel) =>
+    model.brand_slug === 'honda' && model.model === 'Civic'
+      ? '/catalog/honda/civic/2020'
+      : `/catalog/${model.brand_slug}`;
 
-  const handleModelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, brandSlug: string) => {
+  const openModel = (model: PopularModel) => navigate(modelPath(model));
+
+  const handleModelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, model: PopularModel) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      openModel(brandSlug);
+      openModel(model);
     }
   };
 
@@ -47,19 +73,20 @@ export default function HomePage() {
           <div className={styles.heroContent}>
             <p className="eyebrow">Proprietary · Free VIN Decoder · No Account Required</p>
             <h1 className={styles.heroTitle}>
-              Find OEM parts for<br />
-              <span className={styles.heroAccent}>any vehicle</span>
+              Find the part that fits<br />
+              <span className={styles.heroAccent}>your vehicle</span>
             </h1>
             <p className={styles.heroSub}>
-              VIN decoding and parts catalogs for 100+ automotive brands.
-              Powered by the free NHTSA vPIC database — no API key required.
+              Decode a VIN with the free NHTSA database, then explore the live 2020 Honda Civic
+              parts slice. The brand and model preview covers {BRAND_COUNT} brands and{' '}
+              {MODEL_COUNT} models today.
             </p>
             <div className={styles.heroCTA}>
               <Link to="/vin" className="btn btn-primary">
                 Decode a VIN <ArrowRight size={16} />
               </Link>
-              <Link to="/catalog" className="btn btn-ghost">
-                Browse Catalog
+              <Link to="/catalog/honda/civic/2020" className="btn btn-ghost">
+                Browse 2020 Civic parts
               </Link>
             </div>
           </div>
@@ -67,10 +94,10 @@ export default function HomePage() {
           {/* Stats */}
           <div className={styles.heroStats}>
             {[
-              { value: '100+', label: 'Brands' },
-              { value: '1,000+', label: 'Models' },
-              { value: 'Free', label: 'Forever' },
-              { value: 'No Key', label: 'Required' },
+              { value: String(BRAND_COUNT), label: 'Brands' },
+              { value: String(MODEL_COUNT), label: 'Models' },
+              { value: String(LIVE_PARTS_COUNT), label: 'Live parts' },
+              { value: 'Free', label: 'No account' },
             ].map((s, i) => (
               <div key={i} className={styles.heroStat}>
                 <span className={styles.heroStatValue}>{s.value}</span>
@@ -122,8 +149,8 @@ export default function HomePage() {
                 <div
                   key={m.id}
                   className={`card ${styles.modelCard}`}
-                  onClick={() => openModel(m.brand_slug)}
-                  onKeyDown={e => handleModelKeyDown(e, m.brand_slug)}
+                  onClick={() => openModel(m)}
+                  onKeyDown={e => handleModelKeyDown(e, m)}
                   role="button"
                   tabIndex={0}
                 >
@@ -169,12 +196,12 @@ export default function HomePage() {
           <div className={styles.phaseList}>
             {[
               { n: 1, name: 'VIN Decoder & Vehicle Lookup', done: true },
-              { n: 2, name: 'Parts Catalog Database & Navigation', done: false },
-              { n: 3, name: '2D Exploded Diagrams & Viewer', done: false },
+              { n: 2, name: 'Parts Catalog — 2020 Civic Vertical Slice', done: false, status: 'Slice live' },
+              { n: 3, name: '2D Exploded Diagrams', done: false, status: 'Slice live' },
               { n: 4, name: '3D Exploded Views (Three.js + glTF)', done: false },
               { n: 5, name: 'Smart Search, Compatibility & AI', done: false },
               { n: 6, name: 'User Accounts & Marketplace', done: false },
-              { n: 7, name: 'Scaling, SEO & Production', done: false },
+              { n: 7, name: 'Scale catalog data & licensed diagrams', done: false },
             ].map(p => (
               <div key={p.n} className={`${styles.phase} ${p.done ? styles.phaseDone : ''}`}>
                 <span className={styles.phaseNum}>
@@ -182,6 +209,7 @@ export default function HomePage() {
                 </span>
                 <span className={styles.phaseName}>{p.name}</span>
                 {p.done && <span className="badge badge-success">Live</span>}
+                {!p.done && 'status' in p && p.status && <span className="badge badge-amber">{p.status}</span>}
               </div>
             ))}
           </div>

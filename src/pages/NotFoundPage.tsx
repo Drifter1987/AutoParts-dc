@@ -7,6 +7,14 @@ export default function NotFoundPage() {
   usePageMetadata(
     'Page Not Found — AutoParts',
     'The page you requested could not be found. Return to AutoParts to decode a VIN or browse the vehicle catalog.',
+    {
+      noindex: true,
+      jsonLd: {
+        '@type': 'WebPage',
+        name: 'Page Not Found',
+        description: 'The requested AutoParts page could not be found.',
+      },
+    },
   );
 
   return (

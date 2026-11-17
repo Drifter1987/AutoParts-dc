@@ -1,12 +1,18 @@
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
-import { Search, Wrench, BookOpen, Cpu, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Search, Wrench, BookOpen, Cpu, Menu, X, Bookmark } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { trackEvent } from '../../services/telemetry';
 import styles from './Layout.module.css';
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [quickVin, setQuickVin] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    trackEvent('page_view', { path: location.pathname, search: location.search });
+  }, [location.pathname, location.search]);
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,7 +21,7 @@ export default function Layout() {
       setQuickVin('');
       setMenuOpen(false);
     } else if (quickVin.trim().length > 0) {
-      navigate(`/catalog?q=${encodeURIComponent(quickVin.trim())}`);
+      navigate(`/search?q=${encodeURIComponent(quickVin.trim())}`);
       setQuickVin('');
       setMenuOpen(false);
     }
@@ -46,11 +52,11 @@ export default function Layout() {
             <input
               type="text"
               className={styles.searchInput}
-              aria-label="Search by VIN or model"
-              placeholder="VIN or search model..."
+              aria-label="Search by VIN, part number, or model"
+              placeholder="VIN, part #, or model..."
               value={quickVin}
               onChange={e => setQuickVin(e.target.value)}
-              maxLength={17}
+              maxLength={40}
             />
           </form>
 
@@ -84,6 +90,15 @@ export default function Layout() {
               <BookOpen size={15} />
               Catalog
             </NavLink>
+            <NavLink
+              to="/garage"
+              className={({ isActive }) =>
+                `${styles.navLink} ${isActive ? styles.navActive : ''}`
+              }
+            >
+              <Bookmark size={15} />
+              Garage
+            </NavLink>
           </nav>
 
           {/* Mobile menu toggle */}
@@ -104,6 +119,7 @@ export default function Layout() {
             <NavLink to="/" onClick={() => setMenuOpen(false)}>Home</NavLink>
             <NavLink to="/vin" onClick={() => setMenuOpen(false)}>VIN Decoder</NavLink>
             <NavLink to="/catalog" onClick={() => setMenuOpen(false)}>Catalog</NavLink>
+            <NavLink to="/garage" onClick={() => setMenuOpen(false)}>My Garage</NavLink>
             <form
               onSubmit={handleQuickSearch}
               className={styles.mobileSearch}
@@ -112,8 +128,8 @@ export default function Layout() {
             >
               <input
                 className="input"
-                aria-label="Search by VIN or model"
-                placeholder="Search VIN or model..."
+                aria-label="Search by VIN, part number, or model"
+                placeholder="Search VIN, part #, or model..."
                 value={quickVin}
                 onChange={e => setQuickVin(e.target.value)}
               />
@@ -135,10 +151,10 @@ export default function Layout() {
             AutoParts
           </span>
           <span className={styles.footerText}>
-            Proprietary automotive parts catalog — built with React + NHTSA API
+            Representative parts catalog · frontend-only · VIN data from NHTSA
           </span>
           <div className={styles.footerLinks}>
-            <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://github.com/len-golani/AutoParts-fb/issues" target="_blank" rel="noreferrer">Issues</a>
             <a href="https://github.com/len-golani/AutoParts-fb" target="_blank" rel="noreferrer">Source</a>
           </div>
         </div>

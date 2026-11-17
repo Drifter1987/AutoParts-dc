@@ -2,9 +2,17 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Layers, ChevronRight } from 'lucide-react';
 import { catalogApi } from '../services/api';
-import { usePageMetadata } from '../hooks/usePageMetadata';
-import type { Brand } from '../types';
+import { usePageMetadata, breadcrumbJsonLd } from '../hooks/usePageMetadata';
+import { CATALOG_VEHICLES, getPartCount, getVehiclePath } from '../services/parts';
+import type { Brand, VehicleCatalog } from '../types';
 import styles from './BrandPage.module.css';
+
+function findLiveVehicle(brandSlug: string, modelSlug: string): VehicleCatalog | undefined {
+  return CATALOG_VEHICLES.find(
+    vehicle =>
+      vehicle.catalog.brandSlug === brandSlug && vehicle.catalog.modelSlug === modelSlug,
+  );
+}
 
 export default function BrandPage() {
   const { brandSlug } = useParams<{ brandSlug: string }>();
@@ -27,8 +35,25 @@ export default function BrandPage() {
   usePageMetadata(
     brand ? `${brand.name} Models & Parts — AutoParts` : 'Vehicle Brand — AutoParts',
     brand
-      ? `Browse ${brand.name} models and model years. Decode a ${brand.name} VIN to identify the exact trim, engine, and options.`
-      : 'Browse automotive brands and models, then decode a VIN to identify your exact vehicle.',
+      ? `Browse the ${brand.name} brand and model preview. Decode a ${brand.name} VIN to identify the exact trim, engine, and options; live parts data is called out on supported models.`
+      : 'Browse a brand and model preview, then decode a VIN to identify your exact vehicle.',
+    {
+      canonicalPath: brand ? `/catalog/${brand.slug}` : undefined,
+      jsonLd: brand
+        ? [
+            breadcrumbJsonLd([
+              { name: 'Catalog', path: '/catalog' },
+              { name: brand.name, path: `/catalog/${brand.slug}` },
+            ]),
+            {
+              '@type': 'CollectionPage',
+              name: `${brand.name} Models & Parts`,
+              description: `Brand/model preview for ${brand.name}.`,
+              about: { '@type': 'Brand', name: brand.name },
+            },
+          ]
+        : undefined,
+    },
   );
 
   if (loading) return (
@@ -84,8 +109,19 @@ export default function BrandPage() {
         <div className={styles.phaseNotice}>
           <Layers size={15} />
           <span>
-            Parts catalog and exploded diagrams for {brand.name} models are coming in Phase 2 & 3.
-            VIN decoding is available now — <Link to="/vin">try it here</Link>.
+            {brand.slug === 'honda' ? (
+              <>
+                This is a brand and model preview. The live parts vertical slice is the 2020 Civic
+                — <Link to="/catalog/honda/civic/2020">browse the 36-part Civic catalog</Link>.
+                Other Honda models and years still need parts data.
+              </>
+            ) : (
+              <>
+                This is a brand and model preview. Parts for {brand.name} are not published yet —
+                the current parts slice covers the 2020 Civic. VIN decoding is live now —{' '}
+                <Link to="/vin">try it here</Link>.
+              </>
+            )}
           </span>
         </div>
 
@@ -96,41 +132,63 @@ export default function BrandPage() {
         </div>
 
         <div className={styles.modelGrid}>
-          {brand.models.map(model => (
-            <div key={model.slug} className={`card ${styles.modelCard}`}>
-              <div className={styles.modelTop}>
-                <h3 className={styles.modelName}>{model.name}</h3>
-                <span className={styles.comingSoon}>Phase 2</span>
-              </div>
+          {brand.models.map(model => {
+            const live = findLiveVehicle(brand.slug, model.slug);
+            const card = (
+              <>
+                <div className={styles.modelTop}>
+                  <h3 className={styles.modelName}>{model.name}</h3>
+                  {live ? (
+                    <span className={styles.partsLive}>Parts live</span>
+                  ) : (
+                    <span className={styles.comingSoon}>Preview</span>
+                  )}
+                </div>
 
-              {/* Year range */}
-              <div className={styles.yearRow}>
-                <Calendar size={13} />
-                <span>
-                  {Math.min(...model.years)} – {Math.max(...model.years)}
-                </span>
-              </div>
-
-              {/* Year pills */}
-              <div className={styles.yearPills}>
-                {model.years.slice(-4).reverse().map(y => (
-                  <span key={y} className={styles.yearPill}>{y}</span>
-                ))}
-                {model.years.length > 4 && (
-                  <span className={`${styles.yearPill} ${styles.yearMore}`}>
-                    +{model.years.length - 4}
+                <div className={styles.yearRow}>
+                  <Calendar size={13} />
+                  <span>
+                    {Math.min(...model.years)} – {Math.max(...model.years)}
                   </span>
-                )}
-              </div>
+                </div>
 
-              <div className={styles.modelFooter}>
-                <span className={styles.modelFooterText}>
-                  {model.years.length} model year{model.years.length !== 1 ? 's' : ''}
-                </span>
-                <ChevronRight size={13} className={styles.arrow} />
+                <div className={styles.yearPills}>
+                  {model.years.slice(-4).reverse().map(y => (
+                    <span key={y} className={styles.yearPill}>{y}</span>
+                  ))}
+                  {model.years.length > 4 && (
+                    <span className={`${styles.yearPill} ${styles.yearMore}`}>
+                      +{model.years.length - 4}
+                    </span>
+                  )}
+                </div>
+
+                <div className={styles.modelFooter}>
+                  <span className={styles.modelFooterText}>
+                    {live
+                      ? `${getPartCount(live)} parts · ${live.catalog.year}`
+                      : `${model.years.length} model year${model.years.length !== 1 ? 's' : ''}`}
+                  </span>
+                  {live && <ChevronRight size={13} className={styles.arrow} />}
+                </div>
+              </>
+            );
+
+            return live ? (
+              <Link
+                key={model.slug}
+                to={getVehiclePath(live)}
+                className={`card ${styles.modelCard}`}
+                aria-label={`Browse ${live.catalog.year} ${live.catalog.brand} ${live.catalog.model} parts`}
+              >
+                {card}
+              </Link>
+            ) : (
+              <div key={model.slug} className={`card ${styles.modelCard}`}>
+                {card}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* VIN shortcut */}

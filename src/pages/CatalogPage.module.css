@@ -24,6 +24,51 @@
   color: var(--text-muted);
 }
 
+.liveSlice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  margin-bottom: var(--space-6);
+  background: var(--amber-glow);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+
+.liveTitle {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 3px 0;
+}
+
+.liveText {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.liveActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.searchPartsLink {
+  font-size: 0.78rem;
+  color: var(--ice);
+  text-decoration: none;
+  border: 1px solid rgba(79, 195, 247, 0.25);
+  background: var(--ice-dim);
+  border-radius: var(--radius-md);
+  padding: 8px 11px;
+}
+
+.searchPartsLink:hover {
+  border-color: rgba(79, 195, 247, 0.5);
+}
+
 /* ── Toolbar ──────────────────────────────────────────────────────────── */
 .toolbar {
   display: flex;
