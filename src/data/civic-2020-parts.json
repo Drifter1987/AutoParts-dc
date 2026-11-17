@@ -1,0 +1,735 @@
+{
+  "catalog": {
+    "brand": "Honda",
+    "brandSlug": "honda",
+    "model": "Civic",
+    "modelSlug": "civic",
+    "year": 2020,
+    "generation": "10th generation",
+    "market": "US",
+    "engineOptions": ["1.5L Turbo", "2.0L"],
+    "trimOptions": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+    "source": "Representative Honda OEM reference data",
+    "lastUpdated": "2026-11-17",
+    "confidence": "reference",
+    "disclaimer": "This is a representative catalog built for product development. Part numbers, fitment, and availability are not a substitute for a dealer lookup. Verify every part number and fitment with an authorized Honda dealer before ordering."
+  },
+  "assemblies": [
+    {
+      "slug": "engine",
+      "name": "Engine",
+      "summary": "Filters, ignition, belts, and engine sealing components.",
+      "diagramLabel": "Engine accessory drive and filtration",
+      "parts": [
+        {
+          "slug": "engine-oil-filter",
+          "name": "Engine Oil Filter",
+          "oemNumber": "15400-PLM-A02",
+          "alternateNumbers": ["15400-PLM-A01"],
+          "supersedes": ["15400-PLM-A01"],
+          "interchange": ["PH7317", "WIX 57356", "FRAM PH7317"],
+          "aliases": ["oil filter", "engine oil filter"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Spin-on cartridge. Confirm the engine code before ordering; Si and Type R applications can differ.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "engine-air-filter",
+          "name": "Engine Air Filter",
+          "oemNumber": "17220-5AA-A00",
+          "alternateNumbers": ["17220-5AA-A01"],
+          "supersedes": ["17220-5AA-A01"],
+          "interchange": ["MAHLE LX 3061", "WIX WA10045"],
+          "aliases": ["air filter", "air cleaner element"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo"],
+            "trims": ["EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Panel-style element for the 1.5L turbo air box. Do not substitute the 2.0L element.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "spark-plug",
+          "name": "Spark Plug",
+          "oemNumber": "12290-59B-004",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["NGK ILZKR7B11", "Denso SXU22HCR11S"],
+          "aliases": ["ignition plug", "iridium plug"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo"],
+            "trims": ["EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Iridium plug for 1.5L turbo engines. Check plug gap and torque specification before installation.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "serpentine-belt",
+          "name": "Serpentine Belt",
+          "oemNumber": "38920-5AA-A02",
+          "alternateNumbers": [],
+          "supersedes": ["38920-5AA-A01"],
+          "interchange": ["Gates K070630", "Continental 4070630"],
+          "aliases": ["drive belt", "accessory belt"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo"],
+            "trims": ["EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Accessory drive belt. Inspect the tensioner and idler pulleys at the same time.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "valve-cover-gasket",
+          "name": "Valve Cover Gasket",
+          "oemNumber": "12341-5AA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Fel-Pro VS50661R"],
+          "aliases": ["valve cover seal", "rocker cover gasket"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Gasket only; inspect the spark plug tube seals and cover for warping before reuse.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "engine-mount",
+          "name": "Engine Mount",
+          "oemNumber": "50850-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Anchor 3486"],
+          "aliases": ["motor mount", "engine insulator"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Right-side hydraulic mount. Verify transmission type; CVT and manual applications use different brackets.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "pcv-valve",
+          "name": "PCV Valve",
+          "oemNumber": "17130-5AA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Standard Motor Products V551"],
+          "aliases": ["positive crankcase ventilation valve", "crankcase valve"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo"],
+            "trims": ["EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Located on the valve cover. Replace the grommet if it is hardened or leaking.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "timing-chain-tensioner",
+          "name": "Timing Chain Tensioner",
+          "oemNumber": "14510-5AA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Cloyes 9-5513"],
+          "aliases": ["cam chain tensioner", "timing tensioner"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo"],
+            "trims": ["EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Engine timing component. Inspect chain wear and follow the factory timing procedure.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "water-pump",
+          "name": "Engine Water Pump",
+          "oemNumber": "19200-5AA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Aisin WPH-054"],
+          "aliases": ["coolant pump", "water pump assembly"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Requires coolant drain and refill. Verify pulley and housing configuration before ordering.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        }
+      ]
+    },
+    {
+      "slug": "brakes",
+      "name": "Brakes",
+      "summary": "Friction, rotors, hydraulics, and wheel-speed components.",
+      "diagramLabel": "Front brake corner",
+      "parts": [
+        {
+          "slug": "front-brake-pads",
+          "name": "Front Brake Pad Set",
+          "oemNumber": "45022-TBA-A00",
+          "alternateNumbers": ["45022-TBA-A01"],
+          "supersedes": ["45022-TBA-A01"],
+          "interchange": ["Akebono ACT787", "Wagner QC787"],
+          "aliases": ["brake pads", "front pads"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Fitment depends on the factory brake package. Verify rotor diameter and caliper type before ordering.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-brake-rotors",
+          "name": "Front Brake Rotor",
+          "oemNumber": "45251-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Centric 120.40077"],
+          "aliases": ["front disc", "brake rotor"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Sold each. Measure the existing rotor diameter; some trims use a larger front brake package.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "rear-brake-pads",
+          "name": "Rear Brake Pad Set",
+          "oemNumber": "43022-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Akebono ACT1053"],
+          "aliases": ["rear pads", "rear brake shoes"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Check for electronic parking brake or rear caliper variations before service.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "rear-brake-rotors",
+          "name": "Rear Brake Rotor",
+          "oemNumber": "42510-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Centric 120.40078"],
+          "aliases": ["rear disc", "rear rotor"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Sold each. Verify solid versus vented rotor construction for your trim.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-brake-caliper",
+          "name": "Front Brake Caliper",
+          "oemNumber": "45018-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Cardone 19-B3340"],
+          "aliases": ["brake caliper", "front caliper"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Remanufactured or new caliper may require a core charge. Confirm left or right side.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-brake-hose",
+          "name": "Front Brake Hose",
+          "oemNumber": "01468-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Raybestos BH383465"],
+          "aliases": ["brake line", "flex hose"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Hydraulic brake component. Bleed the system after replacement and inspect for leaks.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-abs-wheel-speed-sensor",
+          "name": "Front ABS Wheel Speed Sensor",
+          "oemNumber": "57450-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Standard Motor Products ALS2010"],
+          "aliases": ["abs sensor", "wheel speed sensor"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Confirm left or right side. A scan tool is recommended to verify the fault before replacement.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "parking-brake-shoe",
+          "name": "Parking Brake Shoe",
+          "oemNumber": "43153-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Bosch BS787"],
+          "aliases": ["parking brake", "emergency brake shoe"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "For vehicles with a rear drum-in-hat parking brake. Verify the rear brake configuration.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "brake-hardware-kit",
+          "name": "Front Brake Hardware Kit",
+          "oemNumber": "45022-TBA-A02",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Carlson 14000"],
+          "aliases": ["brake shims", "brake clips", "hardware"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Includes abutment clips and shims for one axle. Match to the installed pad shape.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        }
+      ]
+    },
+    {
+      "slug": "suspension",
+      "name": "Suspension & Steering",
+      "summary": "Struts, control arms, joints, bearings, and alignment hardware.",
+      "diagramLabel": "Front suspension corner",
+      "parts": [
+        {
+          "slug": "front-strut-assembly",
+          "name": "Front Strut Assembly",
+          "oemNumber": "51601-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["KYB SR4560"],
+          "aliases": ["front strut", "shock absorber"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Sold each. Replace in pairs and perform an alignment. Sport and Si tuning may differ.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "rear-shock-absorber",
+          "name": "Rear Shock Absorber",
+          "oemNumber": "52610-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["KYB 349105"],
+          "aliases": ["rear shock", "rear damper"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Sold each. Inspect upper mounts and bump stops; replace in pairs.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-lower-control-arm",
+          "name": "Front Lower Control Arm",
+          "oemNumber": "51350-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Moog RK623284"],
+          "aliases": ["control arm", "lower arm"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Confirm left or right side. Alignment is required after installation.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-lower-ball-joint",
+          "name": "Front Lower Ball Joint",
+          "oemNumber": "51220-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Moog K90363"],
+          "aliases": ["ball joint", "lower joint"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Pressed into the control arm on some applications. Verify installation method.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "outer-tie-rod-end",
+          "name": "Outer Tie Rod End",
+          "oemNumber": "53540-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Moog ES801180"],
+          "aliases": ["tie rod", "steering tie rod"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Confirm left or right side. An alignment is required after replacement.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-sway-bar-link",
+          "name": "Front Sway Bar Link",
+          "oemNumber": "51320-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Moog K750621"],
+          "aliases": ["stabilizer link", "anti-roll bar link"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Sold each. Check the bar bushings and mounting points while the link is removed.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-wheel-bearing",
+          "name": "Front Wheel Bearing",
+          "oemNumber": "44300-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["SKF BR930814"],
+          "aliases": ["wheel hub bearing", "hub bearing"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Press-fit bearing. Verify whether a complete hub assembly is required for your model.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "alignment-cam-bolt",
+          "name": "Alignment Cam Bolt",
+          "oemNumber": "90110-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["SPC 82160"],
+          "aliases": ["cam bolt", "alignment bolt"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Used to adjust camber or toe on supported suspension designs. Confirm the required range.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "front-bump-stop",
+          "name": "Front Bump Stop",
+          "oemNumber": "51722-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["KYB SB123"],
+          "aliases": ["bump stop", "jounce bumper"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Inspect the dust boot and strut mount at the same time; replace deteriorated components together.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        }
+      ]
+    },
+    {
+      "slug": "maintenance",
+      "name": "Filters & Maintenance",
+      "summary": "Cabin filtration, wipers, fluids, and scheduled-service parts.",
+      "diagramLabel": "Cabin and service items",
+      "parts": [
+        {
+          "slug": "cabin-air-filter",
+          "name": "Cabin Air Filter",
+          "oemNumber": "80292-TBA-A11",
+          "alternateNumbers": [],
+          "supersedes": ["80292-TBA-A01"],
+          "interchange": ["FRAM CF11182", "WIX 24682"],
+          "aliases": ["cabin filter", "pollen filter", "AC filter"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Located behind the glovebox. Verify the filter housing is not damaged during removal.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "driver-wiper-blade",
+          "name": "Driver Wiper Blade",
+          "oemNumber": "76620-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Bosch 26A"],
+          "aliases": ["wiper", "windshield wiper"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Driver side. Confirm the connector style and blade length before ordering.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "passenger-wiper-blade",
+          "name": "Passenger Wiper Blade",
+          "oemNumber": "76630-TBA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Bosch 18A"],
+          "aliases": ["wiper", "windshield wiper"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Passenger side. Confirm the connector style and blade length before ordering.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "honda-long-life-coolant",
+          "name": "Honda Long Life Coolant",
+          "oemNumber": "08CLA-G01-000",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Honda Type 2 blue coolant"],
+          "aliases": ["coolant", "antifreeze"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Premixed 50/50. Do not mix with a different coolant formula; follow the owner's manual service interval.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "honda-hcf-2-cvt-fluid",
+          "name": "Honda HCF-2 CVT Fluid",
+          "oemNumber": "08200-9008",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Honda HCF-2"],
+          "aliases": ["cvt fluid", "transmission fluid"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring"],
+            "market": "US"
+          },
+          "fitmentNotes": "For CVT-equipped vehicles only. Do not use in manual-transmission Si or Type R models.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "oil-drain-plug",
+          "name": "Oil Drain Plug",
+          "oemNumber": "90009-RNA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Dorman 090-053"],
+          "aliases": ["drain bolt", "sump plug"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Replace the crush washer with the plug. Tighten to the factory specification.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "drain-plug-crush-washer",
+          "name": "Drain Plug Crush Washer",
+          "oemNumber": "94109-14000",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Honda 94109-14000"],
+          "aliases": ["crush washer", "oil drain washer"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Single-use sealing washer. Replace at every oil change.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "battery",
+          "name": "Vehicle Battery",
+          "oemNumber": "31500-TBA-A00",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Group 35 AGM"],
+          "aliases": ["battery", "12v battery"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo", "2.0L"],
+            "trims": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Verify battery group size, cold-cranking amps, and AGM versus flooded requirements.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        },
+        {
+          "slug": "drive-belt-tensioner",
+          "name": "Drive Belt Tensioner",
+          "oemNumber": "31170-5AA-A01",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": ["Gates 38382"],
+          "aliases": ["belt tensioner", "accessory tensioner"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["1.5L Turbo"],
+            "trims": ["EX-T", "Touring", "Si", "Type R"],
+            "market": "US"
+          },
+          "fitmentNotes": "Inspect the pulley bearing and belt alignment. Replace the belt at the same time.",
+          "source": "Representative Honda OEM reference data",
+          "lastUpdated": "2026-11-17",
+          "confidence": "reference"
+        }
+      ]
+    }
+  ]
+}

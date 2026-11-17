@@ -69,6 +69,75 @@ export interface PopularModelsResponse {
   popular_models: PopularModel[];
 }
 
+// ─── Parts Catalog Types ─────────────────────────────────────────────────────
+
+export type PartConfidence = 'verified' | 'reference' | 'unconfirmed';
+
+export interface PartFitment {
+  years: number[];
+  engines: string[];
+  trims: string[];
+  market: string;
+}
+
+export interface CatalogPart {
+  slug: string;
+  name: string;
+  oemNumber: string;
+  alternateNumbers: string[];
+  supersedes: string[];
+  interchange: string[];
+  aliases: string[];
+  fitment: PartFitment;
+  fitmentNotes: string;
+  source: string;
+  lastUpdated: string;
+  confidence: PartConfidence;
+}
+
+export interface PartAssembly {
+  slug: string;
+  name: string;
+  summary: string;
+  diagramLabel: string;
+  parts: CatalogPart[];
+}
+
+export interface VehicleCatalog {
+  catalog: {
+    brand: string;
+    brandSlug: string;
+    model: string;
+    modelSlug: string;
+    year: number;
+    generation: string;
+    market: string;
+    engineOptions: string[];
+    trimOptions: string[];
+    source: string;
+    lastUpdated: string;
+    confidence: PartConfidence;
+    disclaimer: string;
+  };
+  assemblies: PartAssembly[];
+}
+
+export interface CatalogPartWithContext extends CatalogPart {
+  assemblySlug: string;
+  assemblyName: string;
+  assemblySummary: string;
+}
+
+export interface GarageVehicle {
+  vin: string;
+  year: string;
+  make: string;
+  model: string;
+  trim: string | null;
+  engine: string | null;
+  savedAt: string;
+}
+
 // ─── API Response Wrappers ───────────────────────────────────────────────────
 
 export type ApiStatus = 'idle' | 'loading' | 'success' | 'error';

@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/validate-parts.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:pages": "playwright test --config=playwright.pages.config.ts",
-    "prerender": "node scripts/prerender.mjs"
+    "prerender": "node scripts/prerender.mjs",
+    "validate:parts": "node scripts/validate-parts.mjs"
   },
   "dependencies": {
     "axios": "^1.18.0",
