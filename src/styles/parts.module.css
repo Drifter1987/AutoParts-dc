@@ -600,6 +600,16 @@
   gap: var(--space-3);
 }
 
+.recallIntro {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.recallVinLink {
+  min-height: 44px;
+}
+
 .recallCard {
   padding: var(--space-4);
   border: 1px solid var(--border);
@@ -621,27 +631,30 @@
 }
 
 .recallCampaign {
+  margin: 0;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   color: var(--amber);
   font-weight: 700;
 }
 
 .recallComponent {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
   color: var(--ice);
 }
 
 .recallManufacturer {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
   margin-top: 4px;
 }
 
 .recallText {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.65;
   margin-top: var(--space-2);
 }
 
@@ -651,14 +664,28 @@
 }
 
 .recallDetails summary {
+  min-height: 44px;
+  padding-block: 10px;
   cursor: pointer;
-  color: var(--text-muted);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+
+.recallDetails summary:hover {
+  color: var(--amber);
 }
 
 .recallDetails p {
   margin-top: var(--space-2);
+  font-size: 0.84rem;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.65;
+}
+
+.recallDetails summary:focus-visible,
+.recallLink:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
 }
 
 .recallFooter {
@@ -672,26 +699,41 @@
   border-top: 1px solid var(--border);
 }
 
+.recallCount {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
 .recallMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  gap: var(--space-2) var(--space-3);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
 }
 
 .recallLink {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
+  padding-block: 10px;
   gap: 5px;
   color: var(--ice);
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   font-weight: 700;
   text-decoration: none;
 }
 
 .recallLink:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .recallVinLink {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media print {

@@ -81,13 +81,13 @@ export default function RecallsPanel({ result }: RecallsPanelProps) {
           href={nhtsaRecallUrl(result.vin)}
           target="_blank"
           rel="noreferrer"
-          className="btn btn-primary"
+          className={`btn btn-primary ${styles.recallVinLink}`}
         >
           Check this VIN for open recalls <ExternalLink size={13} />
         </a>
       </div>
 
-      <p className={styles.provenance} style={{ marginBottom: 'var(--space-4)' }}>
+      <p className={styles.recallIntro} style={{ marginBottom: 'var(--space-4)' }}>
         These campaigns are reported to NHTSA for the {vehicleLabel}. The public API does not
         return this VIN&apos;s repair status, so use the VIN check above to confirm which recalls
         are still open for this specific vehicle.
@@ -126,68 +126,74 @@ export default function RecallsPanel({ result }: RecallsPanelProps) {
 
       {recalls && recalls.length > 0 && (
         <>
-          <p className={styles.sectionMeta} style={{ marginBottom: 'var(--space-3)' }}>
+          <p className={`${styles.sectionMeta} ${styles.recallCount}`} style={{ marginBottom: 'var(--space-3)' }}>
             {recalls.length} NHTSA campaign{recalls.length === 1 ? '' : 's'} reported for this
             model year
           </p>
           <div className={styles.recallList}>
-            {recalls.map(recall => (
-              <article
-                key={`${recall.campaignNumber}-${recall.component}`}
-                className={`${styles.recallCard} ${
-                  recall.parkIt || recall.parkOutside ? styles.recallUrgent : ''
-                }`}
-              >
-                <div className={styles.recallHeader}>
-                  <div>
-                    <p className={styles.recallCampaign}>{recall.campaignNumber}</p>
-                    <p className={styles.recallComponent}>{recall.component}</p>
-                    {recall.manufacturer && (
-                      <p className={styles.recallManufacturer}>{recall.manufacturer}</p>
+            {recalls.map((recall, index) => {
+              const headingId = `recall-${index}`;
+              return (
+                <article
+                  key={`${recall.campaignNumber}-${recall.component}`}
+                  aria-labelledby={headingId}
+                  className={`${styles.recallCard} ${
+                    recall.parkIt || recall.parkOutside ? styles.recallUrgent : ''
+                  }`}
+                >
+                  <div className={styles.recallHeader}>
+                    <div>
+                      <h3 id={headingId} className={styles.recallCampaign}>
+                        {recall.campaignNumber}
+                      </h3>
+                      <p className={styles.recallComponent}>{recall.component}</p>
+                      {recall.manufacturer && (
+                        <p className={styles.recallManufacturer}>{recall.manufacturer}</p>
+                      )}
+                    </div>
+                    {(recall.parkIt || recall.parkOutside) && (
+                      <span className="badge badge-amber">
+                        {recall.parkIt && recall.parkOutside
+                          ? 'Do not drive · park outside'
+                          : recall.parkIt
+                            ? 'Do not drive'
+                            : 'Park outside'}
+                      </span>
                     )}
                   </div>
-                  {(recall.parkIt || recall.parkOutside) && (
-                    <span className="badge badge-amber">
-                      {recall.parkIt && recall.parkOutside
-                        ? 'Do not drive · park outside'
-                        : recall.parkIt
-                          ? 'Do not drive'
-                          : 'Park outside'}
-                    </span>
+                  {recall.summary && <p className={styles.recallText}>{recall.summary}</p>}
+                  {recall.consequence && (
+                    <p className={styles.recallText}><strong>Risk:</strong> {recall.consequence}</p>
                   )}
-                </div>
-                {recall.summary && <p className={styles.recallText}>{recall.summary}</p>}
-                {recall.consequence && (
-                  <p className={styles.recallText}><strong>Risk:</strong> {recall.consequence}</p>
-                )}
-                <details className={styles.recallDetails}>
-                  <summary>Remedy and campaign notes</summary>
-                  {recall.remedy && <p><strong>Remedy:</strong> {recall.remedy}</p>}
-                  {recall.overTheAirUpdate && (
-                    <p>This campaign may be addressed by an over-the-air update.</p>
-                  )}
-                </details>
-                <div className={styles.recallFooter}>
-                  <div className={styles.recallMeta}>
-                    {recall.reportDate && (
-                      <span>Reported {formatRecallDate(recall.reportDate)}</span>
+                  <details className={styles.recallDetails}>
+                    <summary>Remedy and campaign notes</summary>
+                    {recall.remedy && <p><strong>Remedy:</strong> {recall.remedy}</p>}
+                    {recall.overTheAirUpdate && (
+                      <p>This campaign may be addressed by an over-the-air update.</p>
                     )}
-                    <span>NHTSA campaign data</span>
+                  </details>
+                  <div className={styles.recallFooter}>
+                    <div className={styles.recallMeta}>
+                      {recall.reportDate && (
+                        <span>Reported {formatRecallDate(recall.reportDate)}</span>
+                      )}
+                      <span>NHTSA campaign data</span>
+                    </div>
+                    {recall.campaignNumber !== 'Unknown campaign' && (
+                      <a
+                        href={nhtsaCampaignUrl(recall.campaignNumber)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.recallLink}
+                        aria-label={`View NHTSA campaign ${recall.campaignNumber}`}
+                      >
+                        View campaign on NHTSA <ExternalLink size={12} />
+                      </a>
+                    )}
                   </div>
-                  {recall.campaignNumber !== 'Unknown campaign' && (
-                    <a
-                      href={nhtsaCampaignUrl(recall.campaignNumber)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={styles.recallLink}
-                      aria-label={`View NHTSA campaign ${recall.campaignNumber}`}
-                    >
-                      View campaign on NHTSA <ExternalLink size={12} />
-                    </a>
-                  )}
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </>
       )}

@@ -245,6 +245,45 @@ test.describe('Civic parts vertical slice', () => {
   });
 });
 
+test.describe('mobile recall panel', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test.beforeEach(async ({ page }) => {
+    await stubNhtsa(page);
+  });
+
+  test('keeps campaign details and NHTSA links usable at phone width', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+
+    await expect(page.getByRole('heading', { name: 'NHTSA safety recalls' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '21V215000' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Check this VIN for open recalls/i })).toBeVisible();
+
+    const noHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    );
+    expect(noHorizontalOverflow).toBe(true);
+
+    const vinLink = page.getByRole('link', { name: /Check this VIN for open recalls/i });
+    const vinLinkBox = await vinLink.boundingBox();
+    expect(vinLinkBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    const details = page.getByText('Remedy and campaign notes').first();
+    const detailsBox = await details.boundingBox();
+    expect(detailsBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await details.click();
+    await expect(page.getByText(/Remedy:/).first()).toBeVisible();
+
+    const campaignLink = page.getByRole('link', { name: /View NHTSA campaign 21V215000/i });
+    const campaignLinkBox = await campaignLink.boundingBox();
+    expect(campaignLinkBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await expect(campaignLink).toHaveAttribute(
+      'href',
+      'https://www.nhtsa.gov/recalls?nhtsaId=21V215000',
+    );
+  });
+});
+
 test.describe('catalog search and filtering', () => {
   test('filters from the catalog page and writes ?q= to the URL', async ({ page }) => {
     await page.goto('/catalog');
