@@ -4,8 +4,13 @@ import { ArrowLeft, Calendar, Layers, ChevronRight } from 'lucide-react';
 import { catalogApi } from '../services/api';
 import { usePageMetadata, breadcrumbJsonLd } from '../hooks/usePageMetadata';
 import { CATALOG_VEHICLES, getPartCount, getVehiclePath } from '../services/parts';
-import type { Brand, VehicleCatalog } from '../types';
+import DemandCapture from '../components/ui/DemandCapture';
+import RollingNumber from '../components/ui/RollingNumber';
+import brandsSeed from '../data/brands.json';
+import type { Brand, BrandsResponse, VehicleCatalog } from '../types';
 import styles from './BrandPage.module.css';
+
+const CATALOG_META = (brandsSeed as BrandsResponse).meta;
 
 function findLiveVehicle(brandSlug: string, modelSlug: string): VehicleCatalog | undefined {
   return CATALOG_VEHICLES.find(
@@ -100,7 +105,7 @@ export default function BrandPage() {
             <p className="eyebrow">{brand.origin} Manufacturer</p>
             <h1 className={styles.brandName}>{brand.name}</h1>
             <p className={styles.brandMeta}>
-              {brand.models.length} models available
+              <RollingNumber value={brand.models.length} /> models available
             </p>
           </div>
         </div>
@@ -125,6 +130,12 @@ export default function BrandPage() {
           </span>
         </div>
 
+        <p className={styles.catalogNote}>
+          Engine options are aggregated from EPA fuel-economy records across each model's
+          production years. They show the configurations recorded for that model, not a claim that
+          every engine was sold in every year. {CATALOG_META?.caveat}
+        </p>
+
         {/* Models grid */}
         <div className={styles.sectionTitle}>
           <p className="eyebrow">Available Models</p>
@@ -134,6 +145,8 @@ export default function BrandPage() {
         <div className={styles.modelGrid}>
           {brand.models.map(model => {
             const live = findLiveVehicle(brand.slug, model.slug);
+            const previewYear = Math.max(...model.years);
+            const previewPath = `/catalog/${brand.slug}/${model.slug}/${previewYear}`;
             const card = (
               <>
                 <div className={styles.modelTop}>
@@ -163,13 +176,24 @@ export default function BrandPage() {
                   )}
                 </div>
 
+                <div className={styles.engineBlock}>
+                  <span className={styles.engineLabel}>
+                    Engines · {model.engines.length}
+                  </span>
+                  <div className={styles.engineList}>
+                    {model.engines.map(engine => (
+                      <span key={engine} className={styles.enginePill}>{engine}</span>
+                    ))}
+                  </div>
+                </div>
+
                 <div className={styles.modelFooter}>
                   <span className={styles.modelFooterText}>
                     {live
                       ? `${getPartCount(live)} parts · ${live.catalog.year}`
-                      : `${model.years.length} model year${model.years.length !== 1 ? 's' : ''}`}
+                      : 'Parts not published · request coverage'}
                   </span>
-                  {live && <ChevronRight size={13} className={styles.arrow} />}
+                  <ChevronRight size={13} className={styles.arrow} />
                 </div>
               </>
             );
@@ -184,9 +208,14 @@ export default function BrandPage() {
                 {card}
               </Link>
             ) : (
-              <div key={model.slug} className={`card ${styles.modelCard}`}>
+              <Link
+                key={model.slug}
+                to={previewPath}
+                className={`card ${styles.modelCard}`}
+                aria-label={`View parts coverage for ${previewYear} ${brand.name} ${model.name}`}
+              >
                 {card}
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -202,6 +231,15 @@ export default function BrandPage() {
           <Link to="/vin" className="btn btn-primary">
             Decode My VIN
           </Link>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-6)' }}>
+          <DemandCapture
+            context={`brand-preview-${brand.slug}`}
+            defaultYear={String(Math.max(...brand.models.flatMap(model => model.years)))}
+            defaultMake={brand.name}
+            compact
+          />
         </div>
       </div>
     </div>

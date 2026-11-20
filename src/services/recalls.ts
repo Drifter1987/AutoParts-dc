@@ -33,13 +33,20 @@ interface RecallsResponse {
 const RECALLS_BASE = 'https://api.nhtsa.gov/recalls/recallsByVehicle';
 const TIMEOUT_MS = 12000;
 
-export async function getRecalls(result: VINDecodeResult): Promise<VehicleRecall[]> {
-  if (!result.make || !result.model || !result.year) return [];
+export interface RecallVehicle {
+  vin: string;
+  year: string | null;
+  make: string | null;
+  model: string | null;
+}
+
+export async function getRecallsForVehicle(vehicle: RecallVehicle): Promise<VehicleRecall[]> {
+  if (!vehicle.make || !vehicle.model || !vehicle.year) return [];
 
   const url = new URL(RECALLS_BASE);
-  url.searchParams.set('make', result.make);
-  url.searchParams.set('model', result.model);
-  url.searchParams.set('modelYear', result.year);
+  url.searchParams.set('make', vehicle.make);
+  url.searchParams.set('model', vehicle.model);
+  url.searchParams.set('modelYear', vehicle.year);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -49,7 +56,7 @@ export async function getRecalls(result: VINDecodeResult): Promise<VehicleRecall
     const data = (await response.json()) as RecallsResponse;
     return (data.results ?? []).map(item => ({
       campaignNumber: item.NHTSACampaignNumber || 'Unknown campaign',
-      manufacturer: item.Manufacturer || result.make || '',
+      manufacturer: item.Manufacturer || vehicle.make || '',
       component: item.Component || 'Safety recall',
       summary: item.Summary || '',
       consequence: item.Consequence || '',
@@ -62,6 +69,10 @@ export async function getRecalls(result: VINDecodeResult): Promise<VehicleRecall
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function getRecalls(result: VINDecodeResult): Promise<VehicleRecall[]> {
+  return getRecallsForVehicle(result);
 }
 
 export function nhtsaRecallUrl(vin: string): string {

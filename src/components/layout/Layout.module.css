@@ -181,6 +181,38 @@
 /* ── Main ─────────────────────────────────────────────────────────────────── */
 .main {
   flex: 1;
+  scroll-margin-top: 72px;
+}
+
+.main:focus {
+  outline: none;
+}
+
+.skipLink {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 500;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--amber);
+  color: #0f1117;
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 120ms ease;
+}
+
+.skipLink:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.pageLoading {
+  padding: var(--space-12) var(--space-4);
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */

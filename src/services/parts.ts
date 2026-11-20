@@ -213,6 +213,60 @@ export function checkFitment(
   };
 }
 
+export interface FitmentConflict {
+  reasons: string[];
+  alternatives: CatalogPartWithContext[];
+  complete: boolean;
+}
+
+/** Explain a fitment mismatch and surface parts in the same assembly that do fit. */
+export function resolveFitmentConflict(
+  part: CatalogPartWithContext,
+  vehicle: VehicleCatalog,
+  engine: string,
+  trim: string,
+): FitmentConflict {
+  const reasons: string[] = [];
+  const complete = Boolean(engine || trim);
+
+  if (!part.fitment.years.includes(vehicle.catalog.year)) {
+    reasons.push(
+      `Year mismatch: this record covers ${part.fitment.years.join(', ')}, not ${vehicle.catalog.year}.`,
+    );
+  }
+  if (!complete) {
+    reasons.push('Vehicle configuration is incomplete: select an engine and trim for a stronger check.');
+  } else {
+    if (engine && !part.fitment.engines.includes(engine)) {
+      reasons.push(
+        `Engine mismatch: ${engine} is not in this part's fitment list (${part.fitment.engines.join(', ') || 'none listed'}).`,
+      );
+    }
+    if (trim && !part.fitment.trims.includes(trim)) {
+      reasons.push(
+        `Trim mismatch: ${trim} is not in this part's fitment list (${part.fitment.trims.join(', ') || 'none listed'}).`,
+      );
+    }
+  }
+
+  const assembly = vehicle.assemblies.find(item => item.slug === part.assemblySlug);
+  const alternatives = (assembly?.parts ?? [])
+    .filter(candidate => candidate.slug !== part.slug)
+    .filter(candidate => {
+      if (!complete) return true;
+      return checkFitment(candidate, engine, trim).tone === 'success';
+    })
+    .slice(0, 3)
+    .map(candidate => ({
+      ...candidate,
+      assemblySlug: part.assemblySlug,
+      assemblyName: part.assemblyName,
+      assemblySummary: part.assemblySummary,
+    }));
+
+  return { reasons, alternatives, complete };
+}
+
 export function inferEngineFromVin(result: VINDecodeResult): string {
   const haystack = `${result.engine ?? ''} ${result.displacement_l ?? ''} ${result.trim ?? ''}`.toLowerCase();
   if (haystack.includes('1.5')) return '1.5L Turbo';

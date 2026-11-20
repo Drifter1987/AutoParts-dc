@@ -114,6 +114,7 @@ const MAKES = [
   { MakeId: 448, MakeName: 'TOYOTA' },
   { MakeId: 482, MakeName: 'VOLKSWAGEN' },
   { MakeId: 485, MakeName: 'VOLVO' },
+  { MakeId: 486, MakeName: 'SAAB' },
 ];
 
 interface ModelFixture {
@@ -136,6 +137,9 @@ const MODELS: Record<string, ModelFixture[]> = {
   '485': [
     { Model_ID: 9001, Model_Name: 'XC90', Make_ID: 485, Make_Name: 'VOLVO' },
   ],
+  '486': [
+    { Model_ID: 9002, Model_Name: '900', Make_ID: 486, Make_Name: 'SAAB' },
+  ],
 };
 
 function vinFromPath(pathname: string, endpoint: string): string {
@@ -144,6 +148,26 @@ function vinFromPath(pathname: string, endpoint: string): string {
 
 /** Intercept every NHTSA vPIC call the VIN page makes, including manual makes. */
 export async function stubNhtsa(page: Page): Promise<void> {
+  await page.route(/^https:\/\/api\.nhtsa\.gov\/complaints\//, async route => {
+    await route.fulfill({
+      json: {
+        Count: 1,
+        results: [
+          {
+            odiNumber: 11345678,
+            dateComplaintFiled: '2021-04-12',
+            components: 'FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP',
+            summary: 'Vehicle stalled while driving; fuel pump was replaced.',
+            crash: false,
+            fire: false,
+            numberOfInjuries: 0,
+            numberOfDeaths: 0,
+          },
+        ],
+      },
+    });
+  });
+
   await page.route(/^https:\/\/api\.nhtsa\.gov\/recalls\//, async route => {
     await route.fulfill({
       json: {

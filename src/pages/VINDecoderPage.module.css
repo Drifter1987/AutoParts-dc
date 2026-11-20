@@ -134,6 +134,29 @@
   margin-bottom: var(--space-12);
 }
 
+.reportStatus {
+  padding: var(--space-6);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.reportStatus strong {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+.reportStatus p {
+  margin-bottom: var(--space-3);
+}
+
+.reportStatus a {
+  color: var(--ice);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ── Info Section ─────────────────────────────────────────────────────── */
 .infoSection {
   border-top: 1px solid var(--border);

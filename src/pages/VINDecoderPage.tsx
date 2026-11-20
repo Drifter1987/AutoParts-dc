@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { List, ChevronDown } from 'lucide-react';
 import VINScanner from '../components/ui/VINScanner';
 import VehicleCard from '../components/ui/VehicleCard';
 import RecallsPanel from '../components/ui/RecallsPanel';
+import SafetyIntelligencePanel from '../components/ui/SafetyIntelligencePanel';
+import RecallWatchButton from '../components/ui/RecallWatchButton';
+import DemandCapture from '../components/ui/DemandCapture';
+import VINSafetyReport from '../components/ui/VINSafetyReport';
 import { vinApi, catalogApi } from '../services/api';
 import { findCatalogBrand } from '../services/catalog';
 import {
+  findCatalogVehicleForDecode,
   findCatalogVehicleForSelection,
   getVehicleLabel,
   getVehiclePath,
@@ -41,21 +46,38 @@ export default function VINDecoderPage() {
   const modelRequest = useRef(0);
 
   const urlVin = searchParams.get('vin');
+  const isReport = searchParams.get('report') === '1';
   const lastUrlVin = useRef<string | null>(null);
+  const reportVehicle = result
+    ? [result.year, result.make, result.model].filter(Boolean).join(' ') || 'Vehicle'
+    : 'Vehicle';
 
   usePageMetadata(
-    'VIN Decoder — AutoParts',
-    'Decode a 17-character VIN with the free NHTSA vPIC database to see make, model, year, engine, trim, and plant details.',
-    {
-      canonicalPath: '/vin',
-      jsonLd: {
-        '@type': 'WebApplication',
-        name: 'AutoParts VIN Decoder',
-        applicationCategory: 'AutomotiveApplication',
-        operatingSystem: 'Web',
-        description: 'Free VIN decoder using the NHTSA vPIC database.',
-      },
-    },
+    isReport ? `${reportVehicle} VIN Safety Report — AutoParts` : 'VIN Decoder — AutoParts',
+    isReport
+      ? 'A shareable VIN safety report with decoded specifications, NHTSA recall campaigns, campaign links, and a VIN-specific open-recall check.'
+      : 'Decode a 17-character VIN with the free NHTSA vPIC database to see make, model, year, engine, trim, and plant details.',
+    isReport
+      ? {
+          type: 'article',
+          noindex: true,
+          canonicalPath: '/vin',
+          jsonLd: {
+            '@type': 'WebPage',
+            name: 'VIN Safety Report',
+            description: 'Decoded VIN specifications and NHTSA recall information.',
+          },
+        }
+      : {
+          canonicalPath: '/vin',
+          jsonLd: {
+            '@type': 'WebApplication',
+            name: 'AutoParts VIN Decoder',
+            applicationCategory: 'AutomotiveApplication',
+            operatingSystem: 'Web',
+            description: 'Free VIN decoder using the NHTSA vPIC database.',
+          },
+        },
   );
 
   // Load years
@@ -144,7 +166,7 @@ export default function VINDecoderPage() {
       setResult(data);
       cacheVinResult(data);
       lastUrlVin.current = vin;
-      setSearchParams({ vin });
+      setSearchParams(isReport ? { vin, report: '1' } : { vin });
       trackEvent('vin_decode_success', { vin, year: data.year, make: data.make, model: data.model });
     } catch (err: unknown) {
       const cached = getCachedVinResult(vin);
@@ -160,7 +182,7 @@ export default function VINDecoderPage() {
     } finally {
       setLoading(false);
     }
-  }, [setSearchParams]);
+  }, [isReport, setSearchParams]);
 
   // Auto-decode a VIN from the URL, but never re-decode one we just handled
   useEffect(() => {
@@ -178,6 +200,7 @@ export default function VINDecoderPage() {
   );
   const canBrowseParts = Boolean(selectedMake && selectedModel && catalogBrand);
   const isUncataloguedMake = Boolean(selectedMake && catalogBrands && !catalogBrand);
+  const decodedCatalogVehicle = findCatalogVehicleForDecode(result);
 
   const handleManualSearch = () => {
     if (!catalogBrand || !selectedModel) return;
@@ -187,6 +210,44 @@ export default function VINDecoderPage() {
     }
     navigate(`/catalog/${catalogBrand.slug}`);
   };
+
+  if (isReport) {
+    return (
+      <div className={styles.page}>
+        <div className="container">
+          {result ? (
+            <VINSafetyReport
+              result={result}
+              catalogBrands={catalogBrands}
+              cachedAt={cachedAt}
+            />
+          ) : (
+            <div className={`card ${styles.reportStatus}`} role="status">
+              {loading ? (
+                <p>Building the VIN safety report…</p>
+              ) : error ? (
+                <>
+                  <strong>The VIN safety report could not be built.</strong>
+                  <p>{error}</p>
+                  <Link to={`/vin${urlVin ? `?vin=${encodeURIComponent(urlVin)}` : ''}`}>
+                    Back to the VIN decoder
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <strong>No VIN was supplied for this report.</strong>
+                  <p>
+                    A VIN safety report needs a 17-character VIN.{' '}
+                    <Link to="/vin">Start with the VIN decoder</Link>.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -321,7 +382,7 @@ export default function VINDecoderPage() {
                 {selectedVehicle
                   ? `Browse Parts for ${getVehicleLabel(selectedVehicle)}`
                   : isUncataloguedMake
-                    ? `Parts catalog for ${selectedMake} coming soon`
+                    ? `Parts not published for ${selectedMake}`
                     : catalogBrand
                       ? `View ${catalogBrand.name} catalog preview`
                       : `Browse Parts for ${selectedYear} ${selectedMake} ${selectedModel}`}
@@ -336,6 +397,17 @@ export default function VINDecoderPage() {
                       : 'Select a make and model to continue'}
               </span>
             </div>
+            {selectedMake && selectedModel && !selectedVehicle && (
+              <div style={{ marginTop: 'var(--space-5)' }}>
+                <DemandCapture
+                  context="manual-selector-uncovered"
+                  defaultYear={selectedYear}
+                  defaultMake={selectedMake}
+                  defaultModel={selectedModel}
+                  compact
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -350,6 +422,30 @@ export default function VINDecoderPage() {
             )}
             <VehicleCard result={result} catalogBrands={catalogBrands} />
             <RecallsPanel result={result} />
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
+              <RecallWatchButton result={result} />
+              <Link to="/recall-center" className="btn btn-ghost">
+                Open Recall Watch
+              </Link>
+              <Link
+                to={`/vin?vin=${encodeURIComponent(result.vin)}&report=1`}
+                className="btn btn-ghost"
+              >
+                Open safety report
+              </Link>
+            </div>
+            {!decodedCatalogVehicle && (
+              <div style={{ marginTop: 'var(--space-5)' }}>
+                <DemandCapture
+                  context="vin-uncovered"
+                  defaultVin={result.vin}
+                  defaultYear={result.year || ''}
+                  defaultMake={result.make || ''}
+                  defaultModel={result.model || ''}
+                />
+              </div>
+            )}
+            <SafetyIntelligencePanel result={result} />
           </div>
         )}
 

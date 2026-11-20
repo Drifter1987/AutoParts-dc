@@ -12,6 +12,7 @@ import styles from '../../styles/parts.module.css';
 
 interface RecallsPanelProps {
   result: VINDecodeResult;
+  reportMode?: boolean;
 }
 
 function formatRecallDate(value: string): string {
@@ -36,17 +37,19 @@ function formatRecallDate(value: string): string {
     : parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export default function RecallsPanel({ result }: RecallsPanelProps) {
+export default function RecallsPanel({ result, reportMode = false }: RecallsPanelProps) {
   const [state, setState] = useState<{
     key: string;
     recalls: VehicleRecall[] | null;
+    checkedAt: string | null;
     error: boolean;
-  }>({ key: '', recalls: null, error: false });
+  }>({ key: '', recalls: null, checkedAt: null, error: false });
 
   const key = `${result.vin}:${result.year}:${result.make}:${result.model}`;
   const vehicleLabel =
     [result.year, result.make, result.model].filter(Boolean).join(' ') || 'this vehicle';
   const recalls = state.key === key ? state.recalls : null;
+  const checkedAt = state.key === key ? state.checkedAt : null;
   const error = state.key === key ? state.error : false;
 
   useEffect(() => {
@@ -55,12 +58,17 @@ export default function RecallsPanel({ result }: RecallsPanelProps) {
     getRecalls(result)
       .then(data => {
         if (cancelled) return;
-        setState({ key, recalls: data, error: false });
+        setState({
+          key,
+          recalls: data,
+          checkedAt: new Date().toISOString(),
+          error: false,
+        });
         trackEvent('recalls_loaded', { vin: result.vin, count: data.length });
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ key, recalls: null, error: true });
+          setState({ key, recalls: null, checkedAt: null, error: true });
           trackEvent('recalls_failed', { vin: result.vin });
         }
       });
@@ -129,6 +137,11 @@ export default function RecallsPanel({ result }: RecallsPanelProps) {
           <p className={`${styles.sectionMeta} ${styles.recallCount}`} style={{ marginBottom: 'var(--space-3)' }}>
             {recalls.length} NHTSA campaign{recalls.length === 1 ? '' : 's'} reported for this
             model year
+            {checkedAt && (
+              <span className={styles.recallChecked}>
+                {' '}· checked {new Date(checkedAt).toLocaleString()}
+              </span>
+            )}
           </p>
           <div className={styles.recallList}>
             {recalls.map((recall, index) => {
@@ -165,7 +178,7 @@ export default function RecallsPanel({ result }: RecallsPanelProps) {
                   {recall.consequence && (
                     <p className={styles.recallText}><strong>Risk:</strong> {recall.consequence}</p>
                   )}
-                  <details className={styles.recallDetails}>
+                  <details className={styles.recallDetails} open={reportMode || undefined}>
                     <summary>Remedy and campaign notes</summary>
                     {recall.remedy && <p><strong>Remedy:</strong> {recall.remedy}</p>}
                     {recall.overTheAirUpdate && (
@@ -185,7 +198,7 @@ export default function RecallsPanel({ result }: RecallsPanelProps) {
                         target="_blank"
                         rel="noreferrer"
                         className={styles.recallLink}
-                        aria-label={`View NHTSA campaign ${recall.campaignNumber}`}
+                        aria-label={`View campaign on NHTSA for ${recall.campaignNumber}`}
                       >
                         View campaign on NHTSA <ExternalLink size={12} />
                       </a>

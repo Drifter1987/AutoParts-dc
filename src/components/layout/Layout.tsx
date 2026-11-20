@@ -1,7 +1,10 @@
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Wrench, BookOpen, Cpu, Menu, X, Bookmark } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Search, Wrench, BookOpen, Cpu, Menu, X, Bookmark, SlidersHorizontal } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
 import { trackEvent } from '../../services/telemetry';
+import RecallWatchdog from '../RecallWatchdog';
+import ScrollEffects from './ScrollEffects';
+import ScrollProgress from './ScrollProgress';
 import styles from './Layout.module.css';
 
 export default function Layout() {
@@ -29,8 +32,14 @@ export default function Layout() {
 
   return (
     <div className={styles.app}>
+      <a href="#main-content" className={styles.skipLink}>
+        Skip to main content
+      </a>
+      <ScrollProgress />
+      <ScrollEffects />
+      <RecallWatchdog pathname={location.pathname} />
       {/* ── Header ── */}
-      <header className={styles.header}>
+      <header className={styles.header} data-site-chrome="true">
         <div className={`container ${styles.headerInner}`}>
           {/* Logo */}
           <Link to="/" className={styles.logo}>
@@ -99,6 +108,15 @@ export default function Layout() {
               <Bookmark size={15} />
               Garage
             </NavLink>
+            <NavLink
+              to="/tools"
+              className={({ isActive }) =>
+                `${styles.navLink} ${isActive ? styles.navActive : ''}`
+              }
+            >
+              <SlidersHorizontal size={15} />
+              Tools
+            </NavLink>
           </nav>
 
           {/* Mobile menu toggle */}
@@ -120,6 +138,9 @@ export default function Layout() {
             <NavLink to="/vin" onClick={() => setMenuOpen(false)}>VIN Decoder</NavLink>
             <NavLink to="/catalog" onClick={() => setMenuOpen(false)}>Catalog</NavLink>
             <NavLink to="/garage" onClick={() => setMenuOpen(false)}>My Garage</NavLink>
+            <NavLink to="/recall-center" onClick={() => setMenuOpen(false)}>Recall Watch</NavLink>
+            <NavLink to="/fleet" onClick={() => setMenuOpen(false)}>Fleet VIN Checker</NavLink>
+            <NavLink to="/tools" onClick={() => setMenuOpen(false)}>Safety Tools</NavLink>
             <form
               onSubmit={handleQuickSearch}
               className={styles.mobileSearch}
@@ -139,12 +160,20 @@ export default function Layout() {
       </header>
 
       {/* ── Main ── */}
-      <main className={styles.main}>
-        <Outlet />
+      <main id="main-content" className={styles.main} tabIndex={-1}>
+        <Suspense
+          fallback={
+            <p className={styles.pageLoading} role="status" aria-live="polite">
+              Loading page…
+            </p>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* ── Footer ── */}
-      <footer className={styles.footer}>
+      <footer className={styles.footer} data-site-chrome="true">
         <div className={`container ${styles.footerInner}`}>
           <span className={styles.footerLogo}>
             <Wrench size={14} />
@@ -154,6 +183,9 @@ export default function Layout() {
             Representative parts catalog · frontend-only · VIN data from NHTSA
           </span>
           <div className={styles.footerLinks}>
+            <Link to="/recall-center">Recall Watch</Link>
+            <Link to="/fleet">Fleet</Link>
+            <Link to="/tools">Tools</Link>
             <a href="https://github.com/len-golani/AutoParts-fb/issues" target="_blank" rel="noreferrer">Issues</a>
             <a href="https://github.com/len-golani/AutoParts-fb" target="_blank" rel="noreferrer">Source</a>
           </div>

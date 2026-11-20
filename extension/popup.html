@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AutoParts VIN Safety</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <p class="eyebrow">AutoParts</p>
+      <h1>VIN safety on a listing</h1>
+      <p class="muted">A VIN panel appears automatically on supported listing pages.</p>
+    </header>
+    <main>
+      <div class="status">
+        <span class="dot" aria-hidden="true"></span>
+        <span>Supported: Marketplace, CarGurus, Autotrader, Cars.com, Bring a Trailer, Copart.</span>
+      </div>
+      <p class="muted">
+        The panel decodes the vehicle with NHTSA vPIC, counts model-year recall campaigns, and
+        links to the VIN-specific NHTSA check and the AutoParts safety report.
+      </p>
+      <a class="primary" href="https://len-golani.github.io/AutoParts-fb/vin" target="_blank" rel="noreferrer">
+        Open the VIN decoder
+      </a>
+      <details>
+        <summary>Privacy and limits</summary>
+        <p class="muted">
+          The extension reads visible text on the current listing page to find a VIN. It sends only
+          that VIN to NHTSA vPIC and NHTSA recalls. It does not read cookies, send analytics, or
+          store browsing history. A detected model-year campaign is not proof of an open recall on
+          the exact vehicle.
+        </p>
+      </details>
+      <p class="fine">Source-only build · not published to a browser store</p>
+    </main>
+  </body>
+</html>

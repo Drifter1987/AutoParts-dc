@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { stubGoogleFonts } from './google-fonts-stubs';
 import { stubNhtsa } from './nhtsa-stubs';
 
@@ -78,7 +79,7 @@ test.describe('VIN decoder', () => {
     await headerSearch.press('Enter');
 
     await expect(page).toHaveURL(new RegExp(`/vin\\?vin=${CHECK_DIGIT_VIN}$`));
-    await expect(page.locator('main').getByRole('textbox')).toHaveValue(CHECK_DIGIT_VIN);
+    await expect(page.getByRole('textbox', { name: 'Vehicle Identification Number (VIN)' })).toHaveValue(CHECK_DIGIT_VIN);
     await expect(page.getByRole('heading', { name: /2010 TOYOTA Camry/i })).toBeVisible();
   });
 
@@ -148,14 +149,14 @@ test.describe('VIN decoder', () => {
     const modelSelect = page.getByRole('combobox').nth(2);
 
     const modelsByMakeId = page.waitForRequest(req =>
-      req.url().includes('/GetModelsForMakeId/485?'),
+      req.url().includes('/GetModelsForMakeId/486?'),
     );
-    await makeSelect.selectOption('VOLVO');
+    await makeSelect.selectOption('SAAB');
     await modelsByMakeId;
-    await modelSelect.selectOption('XC90');
+    await modelSelect.selectOption('900');
 
-    await expect(page.getByRole('button', { name: 'Parts catalog for VOLVO coming soon' })).toBeDisabled();
-    await expect(page.getByText(/VOLVO isn't in the brand\/model preview yet/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Parts not published for SAAB' })).toBeDisabled();
+    await expect(page.getByText(/SAAB isn't in the brand\/model preview yet/i)).toBeVisible();
   });
 });
 
@@ -203,7 +204,7 @@ test.describe('Civic parts vertical slice', () => {
       `https://www.nhtsa.gov/recalls?vin=${CIVIC_2020_VIN}`,
     );
     await expect(
-      page.getByRole('link', { name: /View NHTSA campaign 21V215000/i }),
+      page.getByRole('link', { name: /View campaign on NHTSA for 21V215000/i }),
     ).toHaveAttribute('href', 'https://www.nhtsa.gov/recalls?nhtsaId=21V215000');
     await expect(page.getByText('Honda (American Honda Motor Co.)')).toBeVisible();
 
@@ -218,6 +219,43 @@ test.describe('Civic parts vertical slice', () => {
     await expect(page.getByRole('heading', { name: '2020 Honda Civic Parts' })).toBeVisible();
     await expect(page.getByLabel('Filter fitment by engine')).toHaveValue('1.5L Turbo');
     await expect(page.getByText('Fits your 2020 Honda Civic').first()).toBeVisible();
+  });
+
+  test('opens a shareable VIN safety report from the decoded result', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+
+    const reportLink = page.getByRole('link', { name: 'Safety report', exact: true });
+    await expect(reportLink).toHaveAttribute(
+      'href',
+      `/vin?vin=${CIVIC_2020_VIN}&report=1`,
+    );
+    await reportLink.click();
+
+    await expect(page).toHaveURL(new RegExp(`/vin\\?vin=${CIVIC_2020_VIN}&report=1$`));
+    await expect(page.locator('#report-title')).toContainText('2020 HONDA Civic EX');
+    await expect(page.getByText('VIN safety report', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Report generated/i)).toBeVisible();
+    await expect(page.getByText(/NHTSA's public API does not return whether a campaign is open/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Print / save PDF' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Share report' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Check this VIN for open recalls/i })).toHaveAttribute(
+      'href',
+      `https://www.nhtsa.gov/recalls?vin=${CIVIC_2020_VIN}`,
+    );
+    await expect(page.getByRole('link', { name: /View campaign on NHTSA for 21V215000/i })).toBeVisible();
+    await expect(page.getByText(/Remedy: Honda will replace the fuel pump/i)).toBeVisible();
+  });
+
+  test('hides report actions and site chrome when printing', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}&report=1`);
+    await expect(page.locator('#report-title')).toBeVisible();
+
+    await page.emulateMedia({ media: 'print' });
+
+    await expect(page.getByRole('button', { name: 'Print / save PDF' })).toBeHidden();
+    await expect(page.locator('header[data-site-chrome]')).toBeHidden();
+    await expect(page.locator('footer[data-site-chrome]')).toBeHidden();
+    await expect(page.locator('#report-title')).toBeVisible();
   });
 
   test('searches by OEM number and opens the part with VIN context', async ({ page }) => {
@@ -246,14 +284,16 @@ test.describe('Civic parts vertical slice', () => {
 });
 
 test.describe('mobile recall panel', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
 
   test.beforeEach(async ({ page }) => {
     await stubNhtsa(page);
   });
 
-  test('keeps campaign details and NHTSA links usable at phone width', async ({ page }) => {
-    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+  for (const width of [320, 360, 390]) {
+    test(`keeps campaign details and NHTSA links usable at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
 
     await expect(page.getByRole('heading', { name: 'NHTSA safety recalls' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '21V215000' })).toBeVisible();
@@ -274,13 +314,72 @@ test.describe('mobile recall panel', () => {
     await details.click();
     await expect(page.getByText(/Remedy:/).first()).toBeVisible();
 
-    const campaignLink = page.getByRole('link', { name: /View NHTSA campaign 21V215000/i });
+    const campaignLink = page.getByRole('link', {
+      name: /View campaign on NHTSA for 21V215000/i,
+    });
     const campaignLinkBox = await campaignLink.boundingBox();
     expect(campaignLinkBox?.height ?? 0).toBeGreaterThanOrEqual(44);
     await expect(campaignLink).toHaveAttribute(
       'href',
       'https://www.nhtsa.gov/recalls?nhtsaId=21V215000',
     );
+
+    const { violations } = await new AxeBuilder({ page }).analyze();
+    const serious = violations.filter(
+      violation => violation.impact === 'serious' || violation.impact === 'critical',
+    );
+    expect(
+      serious.map(violation => ({
+        id: violation.id,
+        impact: violation.impact,
+        help: violation.help,
+        targets: violation.nodes.map(node => node.target.join(' ')),
+      })),
+    ).toEqual([]);
+    });
+  }
+
+  test('opens recall details with Enter and Space and shows keyboard focus', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await expect(page.getByRole('heading', { name: 'NHTSA safety recalls' })).toBeVisible();
+
+    const summary = page
+      .locator('summary')
+      .filter({ hasText: 'Remedy and campaign notes' })
+      .first();
+    const details = page.locator('details').filter({ has: summary });
+    await expect(summary).toBeVisible();
+    expect(await details.evaluate(element => (element as HTMLDetailsElement).open)).toBe(false);
+
+    for (let step = 0; step < 30; step += 1) {
+      await page.keyboard.press('Tab');
+      if (await summary.evaluate(element => element === document.activeElement)) break;
+    }
+    await expect(summary).toBeFocused();
+
+    const focusStyle = await summary.evaluate(element => {
+      const style = getComputedStyle(element);
+      return {
+        focusVisible: element.matches(':focus-visible'),
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+        outlineColor: style.outlineColor,
+      };
+    });
+    expect(focusStyle.focusVisible).toBe(true);
+    expect(focusStyle.outlineStyle).toBe('solid');
+    expect(focusStyle.outlineWidth).toBe('2px');
+    expect(focusStyle.outlineColor).toBe('rgb(232, 184, 75)');
+
+    await page.keyboard.press('Enter');
+    await expect(details).toHaveJSProperty('open', true);
+    await expect(page.getByText(/Remedy:/).first()).toBeVisible();
+
+    await page.keyboard.press('Enter');
+    await expect(details).toHaveJSProperty('open', false);
+    await page.keyboard.press('Space');
+    await expect(details).toHaveJSProperty('open', true);
+    await expect(page.getByText(/Remedy:/).first()).toBeVisible();
   });
 });
 
@@ -309,12 +408,12 @@ test.describe('catalog search and filtering', () => {
     await page.goto('/catalog');
 
     await page.getByRole('button', { name: 'Japanese' }).click();
-    await expect(page.locator('[class*="brandCard"]')).toHaveCount(6);
+    await expect(page.locator('[class*="brandCard"]')).toHaveCount(12);
     await expect(page.getByRole('link', { name: /Toyota/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /Ford/ })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'All' }).click();
-    await expect(page.locator('[class*="brandCard"]')).toHaveCount(20);
+    await expect(page.locator('[class*="brandCard"]')).toHaveCount(63);
     await expect(page.getByRole('link', { name: /Ford/ })).toBeVisible();
   });
 });
@@ -471,7 +570,7 @@ test.describe('page metadata', () => {
         path: '/catalog',
         title: 'Vehicle Catalog — AutoParts',
         description:
-          'Browse a preview of 20 automotive brands and 98 models, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.',
+          'Browse 63 active automotive brands and 1249 models with production years and EPA-sourced engine options, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.',
       },
       {
         path: '/catalog/honda',
@@ -546,5 +645,232 @@ test.describe('page metadata', () => {
     const content = await jsonLd.textContent();
     expect(content).toContain('BreadcrumbList');
     expect(content).toContain('CollectionPage');
+  });
+});
+
+test.describe('product safety and handoff layer', () => {
+  test.beforeEach(async ({ page }) => {
+    await stubNhtsa(page);
+  });
+
+  test('adds model-level complaints and investigations to the VIN result and report', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+
+    await expect(page.getByRole('heading', { name: 'Safety intelligence beyond recalls' })).toBeVisible();
+    await expect(page.getByText('ODI 11345678')).toBeVisible();
+    await expect(page.getByText(/Vehicle stalled while driving/i)).toBeVisible();
+    await expect(page.getByText('NHTSA investigations', { exact: true })).toBeVisible();
+    await expect(page.getByText(/No NHTSA investigations returned/i)).toBeVisible();
+
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}&report=1`);
+    await expect(page.getByText('What to do next')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Safety intelligence beyond recalls' })).toBeVisible();
+    await expect(page.getByText('ODI 11345678')).toBeVisible();
+    await expect(page.getByText(/not confirmed recalls for this VIN/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /VIN-specific NHTSA lookup/i })).toBeVisible();
+  });
+
+  test('shows real model-year NHTSA investigations separately from recalls', async ({ page }) => {
+    await page.goto(`/vin?vin=${KNOWN_GOOD_VIN}`);
+
+    await expect(page.getByRole('heading', { name: 'NHTSA safety recalls' })).toBeVisible();
+    await expect(page.getByText('NHTSA EA15001')).toBeVisible();
+    await expect(page.getByText(/Air Bag Inflator Rupture/i).first()).toBeVisible();
+    await expect(page.getByText(/not a confirmed defect or a recall for this VIN/i)).toBeVisible();
+
+    await page.goto(`/vin?vin=${KNOWN_GOOD_VIN}&report=1`);
+    await expect(page.getByText('NHTSA EA09001')).toBeVisible();
+    await expect(page.getByText('Ignition Shift Interlock')).toBeVisible();
+    await expect(page.getByText(/model-level context and are not confirmed recalls/i)).toBeVisible();
+  });
+
+  test('watches a VIN and rechecks it in the recall action center', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await expect(page.getByRole('link', { name: /Recall watch is active/i })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Open Recall Watch' }).click();
+    await expect(page.getByRole('heading', { name: 'Recall Watch' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic/i })).toBeVisible();
+    await expect(page.getByText('21V215000').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Mark repaired' }).click();
+    await expect(page.getByText(/Repair marked/i)).toBeVisible();
+    await expect(page.getByText(/Self-reported repair status/i)).toBeVisible();
+  });
+
+  test('auto-rechecks saved vehicles and keeps new-campaign status until reviewed', async ({ page }) => {
+    const recallPattern = /^https:\/\/api\.nhtsa\.gov\/recalls\//;
+    await page.unroute(recallPattern);
+
+    const baseCampaign = {
+      NHTSACampaignNumber: '21V215000',
+      Component: 'FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP',
+      Summary: 'The low-pressure fuel pump inside the fuel tank may fail.',
+      Manufacturer: 'Honda (American Honda Motor Co.)',
+    };
+    const newCampaign = {
+      NHTSACampaignNumber: '24V999000',
+      Component: 'ELECTRICAL SYSTEM',
+      Summary: 'A new model-year campaign appeared during the watchdog check.',
+      Manufacturer: 'Honda (American Honda Motor Co.)',
+    };
+    let recallResults = [baseCampaign];
+    await page.route(recallPattern, route =>
+      route.fulfill({ json: { Count: recallResults.length, results: recallResults } }),
+    );
+
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await page.goto('/recall-center');
+    await expect(page.getByText(/1 campaign returned for the model year/i)).toBeVisible();
+    await expect(page.getByText('No new campaigns')).toBeVisible();
+
+    recallResults = [baseCampaign, newCampaign];
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+
+    await expect(page.getByText(/new campaign reported/i).first()).toBeVisible();
+    await expect(page.getByText('24V999000').first()).toBeVisible();
+    await expect(page.getByText(/not a VIN-specific open-recall determination/i).first()).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText(/new campaign reported/i).first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Mark reviewed' }).click();
+    await expect(page.getByText(/new campaign reported/i)).toHaveCount(0);
+    await expect(page.getByText('No new campaigns')).toBeVisible();
+  });
+
+  test('explains a fitment conflict and queues a dealer verification request', async ({ page }) => {
+    await page.goto('/catalog/honda/civic/2020/engine/engine-air-filter?engine=2.0L&trim=LX');
+
+    await expect(page.getByRole('heading', { name: 'Not sure this part fits?' })).toBeVisible();
+    await expect(page.getByText(/Engine mismatch/i)).toBeVisible();
+    await expect(page.getByText(/Plausible alternatives/i)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Request fitment verification' }).click();
+    await page.getByLabel('VIN', { exact: true }).fill(CIVIC_2020_VIN);
+    await page.getByLabel('Contact name').fill('Test Driver');
+    await page.getByLabel('Email').fill('driver@example.com');
+    await page.getByRole('button', { name: 'Queue request' }).click();
+
+    await expect(page.getByText(/Request saved with reference FIT-/)).toBeVisible();
+    await expect(page.getByText(/Partner dealer\/shop routing is not connected/i)).toBeVisible();
+  });
+
+  test('keeps the commercial layer honest when no feed is connected', async ({ page }) => {
+    await page.goto('/catalog/honda/civic/2020/brakes/front-brake-pads');
+
+    await expect(page.getByRole('heading', { name: 'Fitment, price & availability' })).toBeVisible();
+    await expect(page.getByText(/No ACES\/PIES or distributor feed is connected/i)).toBeVisible();
+    await expect(page.getByText(/No exact commercial record/i)).toBeVisible();
+    await expect(page.getByText('Feed not connected')).toBeVisible();
+  });
+
+  test('captures demand instead of dead-ending an uncovered brand', async ({ page }) => {
+    await page.goto('/catalog/toyota');
+
+    await expect(page.getByRole('heading', { name: 'Notify me when parts are covered' })).toBeVisible();
+    await page.getByRole('button', { name: 'Notify me when parts are covered' }).click();
+    await page.getByLabel('Model', { exact: true }).fill('Camry');
+    await page.getByLabel('Part needed').fill('front brake pads');
+    await page.getByRole('button', { name: 'Save coverage request' }).click();
+
+    await expect(page.getByText(/Demand request saved as DEMAND-/)).toBeVisible();
+    await expect(page.getByText(/local demand record/i)).toBeVisible();
+  });
+
+  test('opens an uncovered vehicle page and captures VIN or year/make/model demand', async ({ page }) => {
+    await page.goto('/catalog/toyota');
+    const coverageLink = page.getByRole('link', { name: /View parts coverage for .* Toyota Camry/i });
+    await expect(coverageLink).toBeVisible();
+    await coverageLink.click();
+
+    await expect(page).toHaveURL(/\/catalog\/toyota\/camry\/\d{4}$/);
+    await expect(page.getByRole('heading', { name: /Toyota Camry Parts$/ })).toBeVisible();
+    await expect(page.getByText(/No parts are listed for this vehicle/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Notify me when parts are covered' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Notify me when parts are covered' }).click();
+    await expect(page.getByLabel('Year', { exact: true })).toHaveValue(/\d{4}/);
+    await expect(page.getByLabel('Make', { exact: true })).toHaveValue('Toyota');
+    await expect(page.getByLabel('Model', { exact: true })).toHaveValue('Camry');
+    await page.getByLabel('Part needed').fill('cabin air filter');
+    await page.getByRole('button', { name: 'Save coverage request' }).click();
+
+    await expect(page.getByText(/Demand request saved as DEMAND-/)).toBeVisible();
+    await expect(page.getByText(/not a promise of coverage/i)).toBeVisible();
+  });
+
+  test('links an uncovered decoded vehicle to its exact year coverage page', async ({ page }) => {
+    await page.goto(`/vin?vin=${KNOWN_GOOD_VIN}`);
+
+    const coverageLink = page.getByRole('link', { name: 'Notify me when parts are covered' });
+    await expect(coverageLink).toHaveAttribute(
+      'href',
+      `/catalog/honda/accord/2003?vin=${KNOWN_GOOD_VIN}`,
+    );
+    await coverageLink.click();
+    await expect(page.getByRole('heading', { name: '2003 Honda Accord Parts' })).toBeVisible();
+    await expect(page.getByText(/No parts are listed for this vehicle/i)).toBeVisible();
+  });
+
+  test('bulk-checks VINs and exports a fleet CSV', async ({ page }) => {
+    await page.goto('/fleet');
+    await page.getByLabel(/VIN list, CSV, or auction export/i).fill(`${CIVIC_2020_VIN}\n${KNOWN_GOOD_VIN}`);
+    await page.getByRole('button', { name: 'Check VINs' }).click();
+
+    await expect(page.getByText('2020 HONDA Civic').first()).toBeVisible();
+    await expect(page.getByText('2003 HONDA Accord').first()).toBeVisible();
+    await expect(page.getByText(/2\s*VINs checked/i)).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export CSV' }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toContain('autoparts-fleet-recall-check');
+  });
+
+  test('opens the tools hub and hands off to the fleet checker', async ({ page }) => {
+    await page.goto('/tools');
+
+    await expect(page.getByRole('heading', { name: 'Safety & fleet tools' })).toBeVisible();
+    await expect(page.getByText('What is real, what is empty')).toBeVisible();
+    await page.getByRole('link', { name: /Fleet VIN checker/i }).click();
+    await expect(page).toHaveURL(/\/fleet$/);
+    await expect(page.getByRole('heading', { name: 'Fleet VIN recall checker' })).toBeVisible();
+  });
+
+  test('moves My Garage between browsers with a transfer code', async ({ page }) => {
+    await page.goto('/garage');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'autoparts.garage.v1',
+        JSON.stringify([
+          {
+            vin: '2HGFC2F59LH500001',
+            year: '2020',
+            make: 'HONDA',
+            model: 'Civic',
+            trim: 'EX',
+            engine: '1.5L Turbo',
+            savedAt: new Date().toISOString(),
+          },
+        ]),
+      );
+    });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Create transfer code' }).click();
+    const code = await page.getByLabel('Garage transfer code').inputValue();
+    expect(code.length).toBeGreaterThan(20);
+
+    await page.evaluate(() => localStorage.removeItem('autoparts.garage.v1'));
+    await page.reload();
+    await page.getByLabel('Garage transfer code').fill(code);
+    await page.getByRole('button', { name: 'Import and merge' }).click();
+
+    await expect(page.getByText(/Imported 1 saved vehicle/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
   });
 });

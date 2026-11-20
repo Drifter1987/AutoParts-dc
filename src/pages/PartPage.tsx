@@ -13,7 +13,9 @@ import {
   getVehiclePath,
 } from '../services/parts';
 import { trackEvent } from '../services/telemetry';
+import CommercialPanel from '../components/ui/CommercialPanel';
 import CopyButton from '../components/ui/CopyButton';
+import FitmentSupport from '../components/ui/FitmentSupport';
 import ShareButton from '../components/ui/ShareButton';
 import NotFoundPage from './NotFoundPage';
 import styles from '../styles/parts.module.css';
@@ -105,6 +107,14 @@ export default function PartPage() {
       : fitment.tone === 'error'
         ? styles.fitmentError
         : styles.fitmentWarning;
+  const commercialVehicle = {
+    vin,
+    year: vehicle.catalog.year,
+    make: vehicle.catalog.brand,
+    model: vehicle.catalog.model,
+    engine: engine || null,
+    trim: trim || null,
+  };
 
   const relatedParts = vehicle.assemblies
     .find(assembly => assembly.slug === part.assemblySlug)
@@ -207,6 +217,14 @@ export default function PartPage() {
           </span>
         </div>
 
+        <FitmentSupport
+          part={part}
+          vehicle={vehicle}
+          engine={engine}
+          trim={trim}
+          vin={vin}
+        />
+
         <div className={styles.detailGrid}>
           <div className={`card ${styles.detailCard}`}>
             <p className="eyebrow">Fitment & notes</p>
@@ -268,6 +286,15 @@ export default function PartPage() {
               )) : <span className={styles.provenance}>No interchange references listed.</span>}
             </div>
           </div>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-5)' }}>
+          <CommercialPanel
+            partNumber={part.oemNumber}
+            partName={part.name}
+            vehicle={commercialVehicle}
+            fitmentConfirmed={fitment.tone === 'success'}
+          />
         </div>
 
         <section className={`card ${styles.detailCard}`} style={{ marginTop: 'var(--space-5)' }} aria-labelledby="provenance-title">

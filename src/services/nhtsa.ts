@@ -69,7 +69,10 @@ function get(decoded: NhtsaDecoded, key: keyof NhtsaDecoded): string | null {
   return null;
 }
 
-export async function decodeVin(vin: string): Promise<VINDecodeResult> {
+export async function decodeVin(
+  vin: string,
+  options: { includeSpecs?: boolean } = {},
+): Promise<VINDecodeResult> {
   const clean = validateVin(vin);
 
   // Fetch concise decode (fast, flat fields)
@@ -105,20 +108,23 @@ export async function decodeVin(vin: string): Promise<VINDecodeResult> {
         ? 'The VIN check digit did not validate. Double-check the VIN for typos — the vehicle data below still came from NHTSA.'
         : `Decoded with warnings: ${errorText || 'some fields may be incomplete.'}`;
 
-  // Fetch verbose decode for all_specs sidebar (optional enrichment)
+  // Fetch verbose decode for all_specs sidebar (optional enrichment). Fleet
+  // checks skip this because only the vehicle identity is needed.
   let all_specs: VehicleSpec[] = [];
-  try {
-    const verboseUrl = `${NHTSA_BASE}/DecodeVin/${clean}?format=json`;
-    const verbose = await fetchJson<{ Results: NhtsaVerboseItem[] }>(verboseUrl);
-    all_specs = (verbose.Results || [])
-      .filter(item => item.Value && item.Value !== '' && item.Value !== 'Not Applicable')
-      .map(item => ({
-        variable: item.Variable,
-        value: item.Value,
-        variable_id: item.VariableId,
-      }));
-  } catch {
-    // all_specs is optional — don't fail the whole decode
+  if (options.includeSpecs !== false) {
+    try {
+      const verboseUrl = `${NHTSA_BASE}/DecodeVin/${clean}?format=json`;
+      const verbose = await fetchJson<{ Results: NhtsaVerboseItem[] }>(verboseUrl);
+      all_specs = (verbose.Results || [])
+        .filter(item => item.Value && item.Value !== '' && item.Value !== 'Not Applicable')
+        .map(item => ({
+          variable: item.Variable,
+          value: item.Value,
+          variable_id: item.VariableId,
+        }));
+    } catch {
+      // all_specs is optional — don't fail the whole decode
+    }
   }
 
   return {

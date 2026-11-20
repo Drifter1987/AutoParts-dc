@@ -80,7 +80,7 @@ test.describe("prerendered metadata", () => {
         path: "catalog",
         title: "Vehicle Catalog — AutoParts",
         description:
-          "Browse a preview of 20 automotive brands and 98 models, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.",
+          "Browse 63 active automotive brands and 1249 models with production years and EPA-sourced engine options, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.",
       },
       {
         path: "catalog/honda",

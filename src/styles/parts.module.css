@@ -704,6 +704,11 @@
   color: var(--text-secondary);
 }
 
+.recallChecked {
+  font-family: var(--font-body);
+  color: var(--text-muted);
+}
+
 .recallMeta {
   display: flex;
   flex-wrap: wrap;

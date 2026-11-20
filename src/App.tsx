@@ -1,16 +1,22 @@
+import { lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import HomePage from './pages/HomePage';
-import VINDecoderPage from './pages/VINDecoderPage';
-import CatalogPage from './pages/CatalogPage';
-import BrandPage from './pages/BrandPage';
-import ModelYearPage from './pages/ModelYearPage';
-import AssemblyPage from './pages/AssemblyPage';
-import PartPage from './pages/PartPage';
-import SearchPage from './pages/SearchPage';
-import GaragePage from './pages/GaragePage';
-import NotFoundPage from './pages/NotFoundPage';
 import './styles/global.css';
+
+// Keep the initial shell small; each route loads its page on demand.
+const HomePage = lazy(() => import('./pages/HomePage'));
+const VINDecoderPage = lazy(() => import('./pages/VINDecoderPage'));
+const CatalogPage = lazy(() => import('./pages/CatalogPage'));
+const BrandPage = lazy(() => import('./pages/BrandPage'));
+const ModelYearPage = lazy(() => import('./pages/ModelYearPage'));
+const AssemblyPage = lazy(() => import('./pages/AssemblyPage'));
+const PartPage = lazy(() => import('./pages/PartPage'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const GaragePage = lazy(() => import('./pages/GaragePage'));
+const RecallCenterPage = lazy(() => import('./pages/RecallCenterPage'));
+const FleetPage = lazy(() => import('./pages/FleetPage'));
+const ToolsPage = lazy(() => import('./pages/ToolsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
 
@@ -28,6 +34,9 @@ export default function App() {
           <Route path="/catalog/:brandSlug/:modelSlug/:year/:assemblySlug/:partSlug" element={<PartPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/garage" element={<GaragePage />} />
+          <Route path="/recall-center" element={<RecallCenterPage />} />
+          <Route path="/fleet" element={<FleetPage />} />
+          <Route path="/tools" element={<ToolsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

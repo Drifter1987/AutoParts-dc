@@ -339,3 +339,13 @@
 .empty p {
   font-size: 0.95rem;
 }
+
+.catalogNote {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--border-amber);
+  background: rgba(232, 184, 75, 0.04);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}

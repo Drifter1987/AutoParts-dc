@@ -3,10 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ChevronRight, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
 import { usePageMetadata, breadcrumbJsonLd } from '../hooks/usePageMetadata';
-import type { Brand } from '../types';
+import brandsSeed from '../data/brands.json';
+import RollingNumber from '../components/ui/RollingNumber';
+import type { Brand, BrandsResponse } from '../types';
 import styles from './CatalogPage.module.css';
 
-const REGIONS = ['All', 'European', 'Japanese', 'American', 'Korean'];
+const SEED = brandsSeed as BrandsResponse;
+const SEED_BRAND_COUNT = SEED.brands.length;
+const SEED_MODEL_COUNT = SEED.brands.reduce((total, brand) => total + brand.models.length, 0);
 
 export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,7 +21,7 @@ export default function CatalogPage() {
 
   usePageMetadata(
     'Vehicle Catalog — AutoParts',
-    'Browse a preview of 20 automotive brands and 98 models, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.',
+    `Browse ${SEED_BRAND_COUNT} active automotive brands and ${SEED_MODEL_COUNT} models with production years and EPA-sourced engine options, then decode a VIN. The live parts slice currently covers the 2020 Honda Civic.`,
     {
       canonicalPath: '/catalog',
       jsonLd: [
@@ -50,12 +54,23 @@ export default function CatalogPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const regions = useMemo(
+    () => ['All', ...Array.from(new Set(brands.map(brand => brand.origin)))],
+    [brands],
+  );
+  const brandCount = brands.length || SEED_BRAND_COUNT;
+  const modelCount = brands.reduce((total, brand) => total + brand.models.length, 0) || SEED_MODEL_COUNT;
+
   const filtered = useMemo(() => {
+    const needle = query.toLowerCase();
     return brands.filter(b => {
       const matchesRegion = region === 'All' || b.origin === region;
       const matchesQuery = !query ||
-        b.name.toLowerCase().includes(query.toLowerCase()) ||
-        b.models.some(m => m.name.toLowerCase().includes(query.toLowerCase()));
+        b.name.toLowerCase().includes(needle) ||
+        b.models.some(
+          m => m.name.toLowerCase().includes(needle) ||
+            m.engines.some(engine => engine.toLowerCase().includes(needle)),
+        );
       return matchesRegion && matchesQuery;
     });
   }, [brands, query, region]);
@@ -78,11 +93,14 @@ export default function CatalogPage() {
           <p className="eyebrow">Catalog Preview</p>
           <h1 className={styles.title}>Browse by Brand</h1>
           <p className={styles.subtitle}>
-            {brands.length} brands · {brands.reduce((acc, b) => acc + b.models.length, 0)} models indexed
+            <RollingNumber value={brandCount} /> brands · <RollingNumber value={modelCount} /> models indexed
           </p>
           <p className={styles.subtitle} style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-            This is a brand and model preview, not a complete parts catalog. Parts data is live for
-            the 2020 Honda Civic; other models are being added in later slices.
+            This is a brand, model, and engine catalog, not a complete parts catalog. Parts data is
+            live for the 2020 Honda Civic; other models are being added in later slices.
+          </p>
+          <p className={styles.catalogNote}>
+            {SEED.meta?.coverage} Source: {SEED.meta?.source}. {SEED.meta?.caveat}
           </p>
         </div>
 
@@ -117,7 +135,7 @@ export default function CatalogPage() {
           </div>
           <Link to="/search" className={styles.searchPartsLink}>Search parts by OEM number →</Link>
           <div className={styles.regionTabs}>
-            {REGIONS.map(r => (
+            {regions.map(r => (
               <button
                 key={r}
                 className={`${styles.regionTab} ${region === r ? styles.regionActive : ''}`}
@@ -132,7 +150,7 @@ export default function CatalogPage() {
         {/* Results count */}
         {query && (
           <p className={styles.resultCount}>
-            {filtered.length} brand{filtered.length !== 1 ? 's' : ''} matching "{query}"
+            <RollingNumber value={filtered.length} /> brand{filtered.length !== 1 ? 's' : ''} matching "{query}"
           </p>
         )}
 
@@ -188,7 +206,10 @@ export default function CatalogPage() {
                       )}
                     </div>
                     <div className={styles.brandFooter}>
-                      <span className={styles.modelCount}>{brand.models.length} models</span>
+                      <span className={styles.modelCount}>
+                        {brand.models.length} models ·{' '}
+                        {brand.models.reduce((total, model) => total + model.engines.length, 0)} engine options
+                      </span>
                       <ChevronRight size={14} className={styles.arrow} />
                     </div>
                   </Link>

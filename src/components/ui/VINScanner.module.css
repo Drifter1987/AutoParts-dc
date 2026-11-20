@@ -1,9 +1,26 @@
 /* VINScanner.module.css */
 
 .wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+/* Safari will not open a file picker from an input with display:none. Keep it
+   in the layout; it is still hidden from sight and from the tab order. */
+.photoInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
 }
 
 /* ── Legend ─────────────────────────────────────────────────────────────── */
@@ -42,6 +59,11 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   padding: 4px 0;
+}
+
+.vinDisplay:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
 }
 
 @media (max-width: 600px) {
@@ -294,12 +316,26 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
+  padding-right: max(var(--space-4), env(safe-area-inset-right));
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  padding-left: max(var(--space-4), env(safe-area-inset-left));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(5, 7, 10, 0.82);
 }
 
 .cameraModal {
+  display: flex;
+  flex-direction: column;
   width: min(620px, 100%);
+  max-height: 100%;
+  min-height: 0;
+  margin: auto;
   padding: var(--space-5);
+  overflow: hidden;
+  overscroll-behavior: contain;
+  pointer-events: auto;
   background: var(--bg-surface);
   border: 1px solid var(--border-amber);
   border-radius: var(--radius-lg);
@@ -307,10 +343,24 @@
 }
 
 .cameraHeader {
+  flex: 0 0 auto;
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+}
+
+.cameraBody {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.cameraModal button,
+.cameraModal label,
+.cameraModal input {
+  touch-action: manipulation;
 }
 
 .cameraTitle {
@@ -345,15 +395,277 @@
   background: #000;
   border-radius: var(--radius-md);
   object-fit: cover;
+  pointer-events: none;
+}
+
+
+.cameraVideoWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: #000;
+}
+
+.cameraStopped {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: rgba(5, 7, 10, 0.78);
+  color: var(--warning);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+}
+
+.cameraGuide {
+  position: absolute;
+  top: 32%;
+  left: 5%;
+  width: 90%;
+  height: 36%;
+  border: 2px solid var(--amber);
+  border-radius: 8px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.cameraGuideLabel {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(5, 7, 10, 0.72);
+  color: var(--amber);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 .cameraFooter {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cameraRecovery {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: var(--radius-md);
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--warning);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.cameraFooterNotes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 320px;
+}
+
+.cameraNotice {
+  color: var(--warning);
+}
+
+.cameraControls {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   flex-wrap: wrap;
-  margin-top: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.autoRead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.autoRead input {
+  accent-color: var(--amber);
+}
+
+.qualityBadge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(5, 7, 10, 0.78);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.qualityGood {
+  color: var(--success);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.qualityWarn {
+  color: var(--warning);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.ocrReview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--radius-md);
+  background: var(--amber-glow);
+}
+
+.ocrReviewCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.ocrReviewCopy strong {
+  color: var(--text-primary);
+}
+
+.ocrVinInput {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 9px 11px;
+  outline: none;
+  text-transform: uppercase;
+}
+
+.ocrVinInput:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-glow);
+}
+
+.ocrValid {
+  color: var(--success);
+  font-size: 0.76rem;
+}
+
+.ocrWarning {
+  color: var(--warning);
+  font-size: 0.76rem;
+}
+
+.ocrSuggestions,
+.ocrAlternates {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(251, 191, 36, 0.25);
+  font-size: 0.76rem;
+}
+
+.ocrSuggestionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ocrSuggestion {
+  padding: 4px 8px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--warning);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.ocrSuggestion:hover {
+  background: rgba(251, 191, 36, 0.12);
+}
+
+@media (max-width: 600px) {
+  .ocrSuggestions .ocrSuggestion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 4px 8px;
+  }
+}
+
+.ocrPrivacy {
+  font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.ocrInlineError {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: var(--radius-md);
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--warning);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.ocrStatus {
+  margin-top: var(--space-3);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.ocrProgress {
+  height: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.ocrProgress > span {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+  transition: width 0.2s ease;
 }

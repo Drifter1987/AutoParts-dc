@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bookmark, Car, ExternalLink, Trash2 } from 'lucide-react';
+import { BellRing, Bookmark, Car, ExternalLink, Trash2 } from 'lucide-react';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { CATALOG_VEHICLES, getVehicleLabel, getVehiclePath } from '../services/parts';
 import { garageChangedEvent, getGarageVehicles, removeVehicle } from '../services/garage';
+import GarageTransferPanel from '../components/ui/GarageTransferPanel';
 import type { GarageVehicle } from '../types';
 import styles from '../styles/parts.module.css';
 
@@ -48,11 +49,15 @@ export default function GaragePage() {
             <p className="eyebrow">Local workspace</p>
             <h1 className={styles.title}>My Garage</h1>
             <p className={styles.subtitle}>
-              Vehicles saved here stay in this browser only — no account, no server, and no
-              cross-device sync. Reopen a VIN result or go straight to the matching catalog.
+              Vehicles saved here stay in this browser only — no account or server is connected.
+              Reopen a VIN result, start a recall watch, or move the list to another browser with a
+              transfer code below.
             </p>
           </div>
           <div className={styles.pageActions}>
+            <Link to="/recall-center" className="btn btn-ghost">
+              <BellRing size={15} /> Recall Watch
+            </Link>
             <Link to="/vin" className="btn btn-primary">
               <Car size={15} /> Decode another VIN
             </Link>
@@ -104,6 +109,12 @@ export default function GaragePage() {
                     >
                       VIN details
                     </Link>
+                    <Link
+                      to={`/vin?vin=${vehicle.vin}`}
+                      className={`btn btn-ghost ${styles.smallButton}`}
+                    >
+                      <BellRing size={13} /> Watch recalls
+                    </Link>
                     <button
                       type="button"
                       className={`btn btn-ghost ${styles.smallButton}`}
@@ -118,6 +129,10 @@ export default function GaragePage() {
             })}
           </div>
         )}
+
+        <div style={{ marginTop: 'var(--space-6)' }}>
+          <GarageTransferPanel />
+        </div>
 
         <div className={styles.notice} style={{ marginTop: 'var(--space-6)', marginBottom: 0 }}>
           <span>

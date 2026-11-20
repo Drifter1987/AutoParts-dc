@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AutoParts VIN Safety",
+  "version": "0.1.0",
+  "description": "Detect a VIN on a used-car listing and open specs, model-year recalls, and the NHTSA VIN check.",
+  "host_permissions": [
+    "https://vpic.nhtsa.dot.gov/*",
+    "https://api.nhtsa.gov/*",
+    "https://www.nhtsa.gov/*"
+  ],
+  "action": {
+    "default_title": "AutoParts VIN Safety",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/marketplace/*",
+        "https://www.cargurus.com/*",
+        "https://www.autotrader.com/*",
+        "https://www.cars.com/*",
+        "https://bringatrailer.com/*",
+        "https://www.copart.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

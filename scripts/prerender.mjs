@@ -60,6 +60,9 @@ const routes = [
   ),
   { path: "search", output: "search/index.html", waitFor: "h1" },
   { path: "garage", output: "garage/index.html", waitFor: "h1" },
+  { path: "tools", output: "tools/index.html", waitFor: "h1" },
+  { path: "recall-center", output: "recall-center/index.html", waitFor: "h1" },
+  { path: "fleet", output: "fleet/index.html", waitFor: "h1" },
   { path: "not-a-real-page", output: "404.html", waitFor: "h1" },
 ];
 
@@ -83,6 +86,9 @@ try {
   await context.route(
     /^https:\/\/api\.nhtsa\.gov\/recalls\//,
     (route) => route.fulfill({ json: { Count: 0, results: [] } }),
+  );
+  await context.route(/^https:\/\/api\.nhtsa\.gov\/complaints\//, (route) =>
+    route.fulfill({ json: { Count: 0, results: [] } }),
   );
   await context.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) =>
     route.fulfill({ status: 204, body: "" }),
@@ -119,6 +125,7 @@ try {
     "catalog",
     ...brands.map((brand) => `catalog/${brand.slug}`),
     "search",
+    "tools",
     ...catalogRoutes,
   ];
 

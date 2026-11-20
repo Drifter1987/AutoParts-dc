@@ -13,6 +13,7 @@ import {
 } from '../services/parts';
 import { trackEvent } from '../services/telemetry';
 import PartList from '../components/ui/PartList';
+import DemandCapture from '../components/ui/DemandCapture';
 import type { Brand } from '../types';
 import styles from '../styles/parts.module.css';
 
@@ -92,7 +93,10 @@ export default function SearchPage() {
     return brands
       .filter(brand =>
         brand.name.toLowerCase().includes(q) ||
-        brand.models.some(model => model.name.toLowerCase().includes(q)),
+        brand.models.some(
+          model => model.name.toLowerCase().includes(q) ||
+            model.engines.some(engine => engine.toLowerCase().includes(q)),
+        ),
       )
       .slice(0, 8);
   }, [brands, query]);
@@ -240,6 +244,16 @@ export default function SearchPage() {
                 <button type="button" className="btn btn-ghost" onClick={() => setQuery('')}>
                   Clear search
                 </button>
+              </div>
+            )}
+
+            {partResults.length === 0 && brandResults.length === 0 && (
+              <div style={{ marginTop: 'var(--space-5)' }}>
+                <DemandCapture
+                  context="search-no-match"
+                  defaultPart={query}
+                  compact
+                />
               </div>
             )}
           </>

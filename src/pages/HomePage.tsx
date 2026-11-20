@@ -4,6 +4,7 @@ import { ArrowRight, Zap, Database, Box, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { CIVIC_2020, getPartCount } from '../services/parts';
+import RollingNumber from '../components/ui/RollingNumber';
 import brandsData from '../data/brands.json';
 import type { Brand, PopularModel } from '../types';
 import styles from './HomePage.module.css';
@@ -15,9 +16,9 @@ const LIVE_PARTS_COUNT = getPartCount(CIVIC_2020);
 
 const FEATURES = [
   { icon: <Zap size={20} />, title: 'VIN Decoder', desc: 'Instant year, make, model, engine, and trim identification via NHTSA — no account needed', href: '/vin' },
-  { icon: <Database size={20} />, title: 'Brand & Model Preview', desc: `${BRAND_COUNT} brands and ${MODEL_COUNT} models indexed; the 2020 Civic parts slice is live`, href: '/catalog' },
+  { icon: <Database size={20} />, title: 'Brand & Model Catalog', desc: `${BRAND_COUNT} active brands, ${MODEL_COUNT} models, and EPA-sourced engine options; the 2020 Civic parts slice is live`, href: '/catalog' },
   { icon: <Box size={20} />, title: '2D Exploded Diagram', desc: 'Numbered, keyboard-accessible hotspots linked to the Civic parts list', href: '/catalog/honda/civic/2020' },
-  { icon: <Globe size={20} />, title: 'Global Coverage', desc: 'European, Japanese, American, and Korean brands in the brand/model preview', href: '/catalog' },
+  { icon: <Globe size={20} />, title: 'Global Coverage', desc: 'European, Japanese, American, Korean, Chinese, Indian, and Vietnamese brands in the catalog', href: '/catalog' },
 ];
 
 export default function HomePage() {
@@ -78,8 +79,8 @@ export default function HomePage() {
             </h1>
             <p className={styles.heroSub}>
               Decode a VIN with the free NHTSA database, then explore the live 2020 Honda Civic
-              parts slice. The brand and model preview covers {BRAND_COUNT} brands and{' '}
-              {MODEL_COUNT} models today.
+              parts slice. The catalog covers {BRAND_COUNT} active brands, {MODEL_COUNT} models,
+              and their EPA-sourced engine options.
             </p>
             <div className={styles.heroCTA}>
               <Link to="/vin" className="btn btn-primary">
@@ -94,13 +95,15 @@ export default function HomePage() {
           {/* Stats */}
           <div className={styles.heroStats}>
             {[
-              { value: String(BRAND_COUNT), label: 'Brands' },
-              { value: String(MODEL_COUNT), label: 'Models' },
-              { value: String(LIVE_PARTS_COUNT), label: 'Live parts' },
+              { value: BRAND_COUNT, label: 'Brands' },
+              { value: MODEL_COUNT, label: 'Models' },
+              { value: LIVE_PARTS_COUNT, label: 'Live parts' },
               { value: 'Free', label: 'No account' },
             ].map((s, i) => (
               <div key={i} className={styles.heroStat}>
-                <span className={styles.heroStatValue}>{s.value}</span>
+                <span className={styles.heroStatValue}>
+                  {typeof s.value === 'number' ? <RollingNumber value={s.value} /> : s.value}
+                </span>
                 <span className={styles.heroStatLabel}>{s.label}</span>
               </div>
             ))}

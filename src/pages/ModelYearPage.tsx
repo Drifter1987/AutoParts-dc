@@ -10,6 +10,8 @@ import {
   Wrench,
 } from 'lucide-react';
 import { usePageMetadata, breadcrumbJsonLd } from '../hooks/usePageMetadata';
+import brandsData from '../data/brands.json';
+import UncoveredVehiclePage from './UncoveredVehiclePage';
 import {
   getAssemblyPath,
   getCatalogVehicle,
@@ -23,6 +25,7 @@ import { trackEvent } from '../services/telemetry';
 import PartList from '../components/ui/PartList';
 import ShareButton from '../components/ui/ShareButton';
 import NotFoundPage from './NotFoundPage';
+import type { BrandsResponse } from '../types';
 import styles from '../styles/parts.module.css';
 
 export default function ModelYearPage() {
@@ -33,19 +36,35 @@ export default function ModelYearPage() {
   }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const vehicle = getCatalogVehicle(brandSlug, modelSlug, year);
+  const previewBrand = (brandsData as BrandsResponse).brands.find(brand => brand.slug === brandSlug);
+  const previewModel = previewBrand?.models.find(model => model.slug === modelSlug);
+  const requestedYear =
+    year && /^\d{4}$/.test(year)
+      ? year
+      : previewModel?.years.length
+        ? String(Math.max(...previewModel.years))
+        : '';
+  const uncoveredLabel =
+    previewBrand && previewModel && requestedYear
+      ? `${requestedYear} ${previewBrand.name} ${previewModel.name}`
+      : '';
 
   const vin = searchParams.get('vin');
   const engine = searchParams.get('engine') || '';
   const trim = searchParams.get('trim') || '';
   const query = searchParams.get('q') || '';
 
-  const vehicleLabel = vehicle ? getVehicleLabel(vehicle) : 'Vehicle Catalog';
+  const vehicleLabel = vehicle ? getVehicleLabel(vehicle) : uncoveredLabel || 'Vehicle Catalog';
   const title = vehicle
     ? `${vehicleLabel} Parts — AutoParts`
-    : 'Vehicle Parts — AutoParts';
+    : uncoveredLabel
+      ? `${uncoveredLabel} Parts Coverage — AutoParts`
+      : 'Vehicle Parts — AutoParts';
   const description = vehicle
     ? `Browse representative ${vehicleLabel} assemblies and ${getPartCount(vehicle)} OEM-reference parts. Check fitment, copy part numbers, and verify with a dealer.`
-    : 'Browse vehicle assemblies and parts.';
+    : uncoveredLabel
+      ? `Parts coverage for the ${uncoveredLabel} is not published yet. Share a VIN or year, make, model, and the part you need to help prioritize coverage.`
+      : 'Browse vehicle assemblies and parts.';
 
   const jsonLd = vehicle
     ? [
@@ -79,6 +98,7 @@ export default function ModelYearPage() {
 
   usePageMetadata(title, description, {
     canonicalPath: vehicle ? getVehiclePath(vehicle) : undefined,
+    noindex: !vehicle,
     jsonLd,
   });
 
@@ -104,7 +124,17 @@ export default function ModelYearPage() {
     );
   };
 
-  if (!vehicle) return <NotFoundPage />;
+  if (!vehicle) {
+    if (!previewBrand || !previewModel) return <NotFoundPage />;
+    return (
+      <UncoveredVehiclePage
+        brand={previewBrand}
+        model={previewModel}
+        year={requestedYear}
+        vin={vin}
+      />
+    );
+  }
 
   const parts = vehicle.assemblies.flatMap(assembly =>
     assembly.parts.map(part => ({

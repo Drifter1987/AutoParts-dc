@@ -46,6 +46,24 @@ export function removeVehicle(vin: string): void {
   write(read().filter(vehicle => vehicle.vin !== vin));
 }
 
+/** Merge a transfer bundle without duplicating VINs or losing the newest save. */
+export function mergeGarageVehicles(vehicles: GarageVehicle[]): number {
+  const existing = new Map(read().map(vehicle => [vehicle.vin, vehicle]));
+  let imported = 0;
+  for (const vehicle of vehicles) {
+    const current = existing.get(vehicle.vin);
+    if (!current) {
+      existing.set(vehicle.vin, vehicle);
+      imported += 1;
+    } else if (vehicle.savedAt > current.savedAt) {
+      existing.set(vehicle.vin, vehicle);
+      imported += 1;
+    }
+  }
+  write([...existing.values()].sort((a, b) => b.savedAt.localeCompare(a.savedAt)));
+  return imported;
+}
+
 export function garageChangedEvent(): string {
   return CHANGE_EVENT;
 }

@@ -1,0 +1,304 @@
+.report {
+  padding-bottom: var(--space-10);
+}
+
+.reportHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-6);
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--bg-surface), var(--bg-elevated));
+}
+
+.headerCopy {
+  min-width: 0;
+}
+
+.title {
+  margin-top: var(--space-2);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.trim {
+  display: inline-block;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.vinLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.vinLine span {
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vinLine code {
+  color: var(--amber);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.timestamp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.timestamp svg {
+  color: var(--ice);
+  flex-shrink: 0;
+}
+
+.timestampDivider {
+  color: var(--text-muted);
+}
+
+.cachedNote {
+  margin-top: var(--space-2);
+  font-size: 0.78rem;
+  color: var(--warning);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.scopeNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--border-amber);
+  border-radius: var(--radius-md);
+  background: var(--amber-glow);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.scopeIcon {
+  color: var(--amber);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.scopeNote strong {
+  color: var(--text-primary);
+}
+
+.scopeNote p {
+  margin-top: var(--space-1);
+}
+
+.scopeNote a {
+  color: var(--ice);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sectionStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reportFooter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.reportFooter a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.reportFooter a:hover,
+.scopeNote a:hover {
+  color: var(--ice);
+}
+
+@media (max-width: 600px) {
+  .reportHeader {
+    padding: var(--space-5);
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .scopeNote {
+    padding: var(--space-4);
+  }
+}
+
+@media print {
+  .report {
+    padding: 0;
+  }
+
+  .reportHeader {
+    padding: 0 0 14px;
+    margin-bottom: 14px;
+    border: none;
+    border-bottom: 2px solid #222;
+    border-radius: 0;
+    background: none;
+    color: #111;
+  }
+
+  :global(body.vin-report-print) {
+    color: #111 !important;
+  }
+
+  .report :global(.eyebrow) {
+    color: #333 !important;
+  }
+
+  .title,
+  .trim,
+  .vinLine code,
+  .scopeNote strong {
+    color: #111 !important;
+  }
+
+  .vinLine code {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .vinLine,
+  .vinLine span,
+  .timestamp,
+  .timestampDivider,
+  .scopeNote,
+  .scopeNote p,
+  .reportFooter {
+    color: #333 !important;
+  }
+
+  .noPrint {
+    display: none !important;
+  }
+
+  .report :global([data-report-action]) {
+    display: none !important;
+  }
+
+  .scopeNote {
+    border: 1px solid #999;
+    background: #f5f5f5;
+    break-inside: avoid;
+  }
+
+  .scopeNote a,
+  .reportFooter a {
+    color: #0645ad !important;
+  }
+
+  .report :global(.card) {
+    border-color: #bbb !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    color: #111 !important;
+  }
+
+  .report :global(.card) * {
+    color: #111 !important;
+  }
+
+  .report :global(.card) a {
+    color: #0645ad !important;
+  }
+
+  .report :global(.badge) {
+    border-color: #999 !important;
+    background: #eee !important;
+    color: #111 !important;
+  }
+
+  .report :global([class*="statStrip"]) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+    overflow: visible;
+  }
+
+  .report :global([class*="statStrip"] > div) {
+    min-width: 0;
+    padding: 6px 8px;
+  }
+
+  .report :global([class*="statValue"]) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .report :global([class*="specRow"]) {
+    break-inside: avoid;
+  }
+
+  .report :global(article) {
+    break-inside: avoid;
+  }
+
+  .report :global(details:not([open]) > *:not(summary)) {
+    display: block !important;
+  }
+
+  .sectionStack {
+    gap: 14px;
+  }
+}
+
+@media print {
+  :global(body.vin-report-print) {
+    background: #fff !important;
+  }
+
+  :global(body.vin-report-print)::before {
+    display: none !important;
+  }
+
+  :global(body.vin-report-print) [data-site-chrome] {
+    display: none !important;
+  }
+}

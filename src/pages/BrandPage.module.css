@@ -286,3 +286,44 @@ a.modelCard {
   padding: var(--space-16) 0;
   color: var(--text-muted);
 }
+
+.catalogNote {
+  margin: calc(var(--space-2) * -1) 0 var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--border-amber);
+  background: rgba(232, 184, 75, 0.04);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.engineBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.engineLabel {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.engineList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.enginePill {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1.35;
+}

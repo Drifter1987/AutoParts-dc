@@ -35,6 +35,7 @@ export interface VehicleModel {
   name: string;
   slug: string;
   years: number[];
+  engines: string[];
 }
 
 export interface Brand {
@@ -45,8 +46,16 @@ export interface Brand {
   models: VehicleModel[];
 }
 
+export interface BrandCatalogMeta {
+  source: string;
+  coverage: string;
+  updatedAt: string;
+  caveat: string;
+}
+
 export interface BrandsResponse {
   brands: Brand[];
+  meta?: BrandCatalogMeta;
 }
 
 export interface PopularModel {
@@ -136,6 +145,178 @@ export interface GarageVehicle {
   trim: string | null;
   engine: string | null;
   savedAt: string;
+}
+
+// ─── Commercial Fitment & Availability ───────────────────────────────────────
+
+export type CommercialConfidence = 'verified' | 'reference' | 'unconfirmed';
+
+export interface CommercialFitmentRecord {
+  id: string;
+  partNumber: string;
+  brand: string;
+  years: number[];
+  make: string;
+  model: string;
+  engines: string[];
+  trims: string[];
+  source: string;
+  updatedAt: string;
+  confidence: CommercialConfidence;
+  aces?: Record<string, unknown>;
+  pies?: Record<string, unknown>;
+}
+
+export interface AvailabilityOffer {
+  id: string;
+  partNumber: string;
+  retailer: string;
+  price: number | null;
+  currency: string;
+  inStock: boolean | null;
+  url: string;
+  fitmentConfidence: 'confirmed' | 'conditional';
+  disclosure: string;
+  updatedAt: string;
+}
+
+export interface CommercialDataBundle {
+  version: string;
+  source: string | null;
+  updatedAt: string | null;
+  disclosure: string;
+  fitmentRecords: CommercialFitmentRecord[];
+  offers: AvailabilityOffer[];
+}
+
+// ─── Recall Watch ────────────────────────────────────────────────────────────
+
+export interface RecallCampaignSeen {
+  campaignNumber: string;
+  firstSeenAt: string;
+}
+
+export interface CompletedRepair {
+  campaignNumber: string;
+  completedAt: string;
+  note?: string;
+}
+
+export interface RecallWatch {
+  vin: string;
+  year: string;
+  make: string;
+  model: string;
+  trim: string | null;
+  engine: string | null;
+  addedAt: string;
+  notificationsOptIn: boolean;
+  lastCheckedAt: string | null;
+  campaignHistory: RecallCampaignSeen[];
+  newCampaigns: string[];
+  newCampaignsDetectedAt: string | null;
+  completedRepairs: CompletedRepair[];
+}
+
+// ─── Safety Intelligence ─────────────────────────────────────────────────────
+
+export interface SafetyComplaint {
+  odiNumber: string;
+  dateFiled: string;
+  components: string[];
+  summary: string;
+  crash: boolean;
+  fire: boolean;
+  injuries: number;
+  deaths: number;
+}
+
+export interface SafetyInvestigation {
+  id: string;
+  investigationType: string;
+  status: 'open' | 'closed' | string;
+  subject: string;
+  summary?: string;
+  openedDate: string | null;
+  closedDate: string | null;
+  components: string[];
+  recallCampaign: string | null;
+  manufacturer?: string;
+  url: string;
+}
+
+export interface ManufacturerCommunication {
+  id: string;
+  communicationType: string;
+  date: string;
+  summary: string;
+}
+
+// ─── Dealer / Fitment Handoff ────────────────────────────────────────────────
+
+export interface FitmentVerificationRequest {
+  id: string;
+  createdAt: string;
+  vin: string;
+  partNumber: string;
+  partName: string;
+  vehicle: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  notes?: string;
+  status: 'local-queue';
+}
+
+export interface FitmentCorrectionReport {
+  id: string;
+  createdAt: string;
+  vin: string;
+  partNumber: string;
+  partName: string;
+  vehicle: string;
+  reason: string;
+  details: string;
+  status: 'local-audit';
+}
+
+// ─── Demand Capture ──────────────────────────────────────────────────────────
+
+export interface DemandRequest {
+  id: string;
+  createdAt: string;
+  email: string;
+  vin: string;
+  year: string;
+  make: string;
+  model: string;
+  partNeeded: string;
+  context: string;
+  status: 'local-demand-list';
+}
+
+// ─── Fleet ───────────────────────────────────────────────────────────────────
+
+export type FleetRowStatus = 'pending' | 'checking' | 'complete' | 'error';
+
+export interface FleetRow {
+  vin: string;
+  status: FleetRowStatus;
+  year?: string | null;
+  make?: string | null;
+  model?: string | null;
+  recalls?: VehicleRecallLike[];
+  error?: string;
+  checkedAt?: string;
+}
+
+/** Loose shape shared by the recall client and the fleet checker. */
+export interface VehicleRecallLike {
+  campaignNumber: string;
+  component: string;
+  summary: string;
+  remedy: string;
+  reportDate: string;
 }
 
 // ─── API Response Wrappers ───────────────────────────────────────────────────
