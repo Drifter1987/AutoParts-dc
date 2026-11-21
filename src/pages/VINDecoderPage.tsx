@@ -288,9 +288,7 @@ export default function VINDecoderPage() {
                 The VIN is a 17-character code printed on the dashboard (driver's side) and door jamb
               </p>
             </div>
-            {/* Remount when the URL VIN changes so the input tracks it */}
             <VINScanner
-              key={urlVin || ''}
               onDecode={handleDecode}
               loading={loading}
               error={error}
@@ -414,6 +412,10 @@ export default function VINDecoderPage() {
         {/* ── Result ── */}
         {result && (
           <div className={styles.result}>
+            <p className={styles.srOnly} role="status">
+              Decoded {[result.year, result.make, result.model].filter(Boolean).join(' ')} (
+              {result.vin}). Results are below the VIN form.
+            </p>
             {cachedAt && (
               <p className={styles.manualNote} style={{ marginBottom: 'var(--space-2)' }}>
                 Cached decode from {new Date(cachedAt).toLocaleString()} — reconnect to refresh

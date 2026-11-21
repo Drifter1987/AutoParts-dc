@@ -596,6 +596,71 @@ test.describe('VIN camera OCR', () => {
     await expect(page.getByRole('button', { name: 'Scan VIN with camera' })).toBeFocused();
   });
 
+  test('keeps keyboard focus in the VIN input through a decode', async ({ page }) => {
+    const input = vinInput(page);
+    await input.focus();
+    await page.keyboard.type(INVALID_CHECK_DIGIT_VIN);
+    await expect(input).toHaveValue(INVALID_CHECK_DIGIT_VIN);
+
+    await page.keyboard.press('Enter');
+
+    // The scan animation and the NHTSA request must not move focus out of the field.
+    await expect(input).toHaveAttribute('aria-busy', 'true');
+    await expect(input).toBeFocused();
+
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic/i })).toBeVisible();
+    await expect(input).toBeFocused();
+    await expect(
+      page.getByRole('status').filter({ hasText: /Decoded 2020 HONDA Civic/ }),
+    ).toBeVisible();
+
+    // Tab continues from the input to its submit button instead of restarting at the top.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Decode VIN' })).toBeFocused();
+  });
+
+  test('clears a stale OCR review when the URL VIN changes', async ({ page }) => {
+    await setOcrText(page, VALID_VIN);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'vin.png',
+      mimeType: 'image/png',
+      buffer: await makePhotoPng(page, VALID_VIN),
+    });
+    await expect(reviewGroup(page)).toBeVisible();
+
+    const headerSearch = page.getByPlaceholder('VIN, part #, or model...');
+    await headerSearch.fill(INVALID_CHECK_DIGIT_VIN);
+    await headerSearch.press('Enter');
+
+    await expect(page).toHaveURL(new RegExp(`/vin\\?vin=${INVALID_CHECK_DIGIT_VIN}$`));
+    await expect(reviewGroup(page)).toHaveCount(0);
+    await expect(vinInput(page)).toHaveValue(INVALID_CHECK_DIGIT_VIN);
+  });
+
+  test('wraps Shift+Tab inside the camera dialog from the container', async ({ page }) => {
+    await openCamera(page);
+    const dialog = page.getByRole('dialog', { name: 'Read a VIN' });
+    await expect(dialog).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Cancel VIN camera scan' })).toBeFocused();
+  });
+
+  test('pulls keyboard focus back into the camera dialog after focus is lost', async ({ page }) => {
+    await openCamera(page);
+
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Cancel VIN camera scan' })).toBeFocused();
+
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+  });
+
   test('switches between the rear and front cameras', async ({ page }) => {
     await openCamera(page);
     expect(await page.evaluate(() => (window as CameraTestWindow).__lastFacingMode)).toBe(

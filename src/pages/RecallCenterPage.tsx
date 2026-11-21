@@ -294,8 +294,11 @@ export default function RecallCenterPage() {
                     <button
                       type="button"
                       className="btn btn-ghost"
-                      onClick={() => void checkWatch(getRecallWatch(watch.vin) ?? watch)}
-                      disabled={row?.checking}
+                      onClick={() => {
+                        if (!row?.checking) void checkWatch(getRecallWatch(watch.vin) ?? watch);
+                      }}
+                      aria-disabled={row?.checking || undefined}
+                      aria-busy={row?.checking || undefined}
                     >
                       <RefreshCw size={14} /> {row?.checking ? 'Checking…' : 'Recheck now'}
                     </button>

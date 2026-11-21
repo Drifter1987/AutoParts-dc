@@ -205,6 +205,7 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || scanning) return;
     const clean = vin.trim().toUpperCase();
     if (clean.length === 17) {
       setScanIndex(0);
@@ -241,6 +242,25 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
     setTorchAvailable(false);
     setTorchOn(false);
   }, []);
+
+  // Track a VIN supplied by the URL without remounting the scanner (a remount
+  // would drop keyboard focus right after a decode updates the query string).
+  // A new URL VIN starts a new scan session: close the camera and drop any OCR
+  // review, photo status, or camera error that belonged to the old VIN.
+  const lastInitialVin = useRef(initialVin);
+  useEffect(() => {
+    if (initialVin === lastInitialVin.current) return;
+    lastInitialVin.current = initialVin;
+    setVin(initialVin);
+    closeCamera();
+    setCameraError(null);
+    setOcrError(null);
+    setOcrResult(null);
+    setPhotoBusy(false);
+    setPhotoStatus(null);
+    setScanning(false);
+    setScanIndex(-1);
+  }, [initialVin, closeCamera]);
 
   const cancelCamera = useCallback(() => {
     setOcrError(null);
@@ -448,6 +468,16 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+
+      // A focused control can become disabled while OCR runs, which moves focus
+      // to <body> or the dialog container. Pull the next Tab back into the
+      // dialog instead of letting it fall through to the page behind it.
+      if (!activeElement || activeElement === modal || !modal.contains(activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
 
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
@@ -797,7 +827,7 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
       </div>
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className={styles.form}>
+      <form onSubmit={handleSubmit} className={styles.form} aria-busy={isActive || undefined}>
         <div className={styles.inputWrapper}>
           <Search size={18} className={styles.inputIcon} />
           <input
@@ -810,7 +840,8 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
             value={vin}
             onChange={handleInput}
             placeholder={`Try: ${SAMPLE_VINS[hintIndex]}`}
-            disabled={isActive}
+            readOnly={isActive}
+            aria-busy={isActive || undefined}
             maxLength={17}
             spellCheck={false}
             autoComplete="off"
@@ -825,7 +856,9 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
         <button
           type="submit"
           className={`btn btn-primary ${styles.decodeBtn}`}
-          disabled={!isValid || isActive}
+          disabled={!isValid}
+          aria-disabled={isActive || undefined}
+          aria-busy={isActive || undefined}
         >
           {isActive ? (
             <>
@@ -920,6 +953,7 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
             role="dialog"
             aria-modal="true"
             aria-labelledby="vin-camera-title"
+            aria-busy={ocrBusy || undefined}
             tabIndex={-1}
           >
           <div className={styles.cameraModal}>
@@ -1065,8 +1099,11 @@ export default function VINScanner({ onDecode, loading, error, initialVin = '' }
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() => void captureOcr()}
-                  disabled={!cameraStream || ocrBusy}
+                  onClick={() => {
+                    if (!ocrBusy) void captureOcr();
+                  }}
+                  disabled={!cameraStream}
+                  aria-disabled={ocrBusy || undefined}
                 >
                   {ocrBusy ? <Loader2 size={14} className={styles.spin} /> : <ScanText size={14} />}
                   {ocrBusy ? 'Reading…' : 'Read VIN text'}
