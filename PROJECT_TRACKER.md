@@ -1,9 +1,9 @@
 # AutoParts — Project Tracker
 
-**Last updated:** 2026-11-20  
-**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `abab5f5`, GitHub Pages run #10 succeeded.  
+**Last updated:** 2026-11-22  
+**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `e924f0f`, GitHub Pages run `45020132430` succeeded.  
 **Branch/worktree state:** app commit pushed to `main`; this tracker is committed separately. Markdown-only pushes do not redeploy Pages.  
-**Verification snapshot:** 96 Playwright tests pass; TypeScript, ESLint, production build, prerender, Pages deploy, and deployed Pages smoke pass.
+**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. The last full-suite baseline was **96 passed** on 2026-11-20 and has not been re-baselined since.
 
 This file is the continuity record for the AutoParts project. Read it before changing behavior, accessibility, data claims, or the static-host pipeline.
 
@@ -99,6 +99,28 @@ tests/
 - Accessibility: muted text contrast fix, named NHTSA recall links, focusable/labeled VIN and stats strips, keyboard recall toggles, axe gate across core routes, skip link.
 - Performance: route-level lazy loading with the shell and a status fallback preserved.
 
+### My Garage local workspace (2026-11-22)
+
+Shipped in `325ce5e` (names, notes, backup) and hardened in `a4e4331` (restore-safe notes, write-failure reporting).
+
+- **Default naming:** the display label is derived from the decoded vehicle — model, trim, then engine detail — skipping a trim or engine token the label already carries. A blank custom name falls back to this label, so naming is optional.
+- **Custom name and notes:** each vehicle stores an optional name (80 characters) and free-text notes (4,000 characters) in `localStorage` under `autoparts.garage.v1`. Notes save on blur or via the button; the name saves from an inline form.
+- **Rename:** "Rename vehicle" opens an inline form under the card heading. Enter or "Save name" commits; Escape or "Cancel" discards; focus returns to the trigger. Blank input clears the custom name and restores the default label.
+- **Save-failure handling:** every garage write reports when the browser refuses it. Rename, notes, save-to-garage, and remove show the shared message "Could not update My Garage. Browser storage is unavailable or full." in a `role="alert"`, leave the stored state untouched, and skip the success state (no "Notes saved.", no "Saved to My Garage", no removed card).
+- **Restore-safe drafts:** a mounted card follows the stored notes, so a backup restore or transfer import that changes a vehicle's notes updates the field instead of leaving a stale draft that could overwrite the restore on blur.
+- **Cross-tab sync:** `src/services/garage.ts` bridges the browser `storage` event for `autoparts.garage.v1` to the existing in-page change event. A rename, notes save, remove, or backup restore in one tab refreshes every other open tab without a reload; the writing tab still updates from its own in-page event.
+- **Backup and restore:** `src/services/garageBackup.ts` exports every saved vehicle (name, notes, savedAt) to a versioned JSON file and restores it by **replacing** the garage, not merging. `src/components/ui/GarageBackupPanel.tsx` previews the file's date and vehicle count before the destructive restore. Import normalizes each vehicle, rejects invalid or duplicate VINs, caps at 12 vehicles, and reports skipped entries.
+- **Transfer code unchanged:** the older base64 transfer code in `garageTransfer.ts` still merges and keeps the newest save per VIN; it is not a backup/restore path.
+
+**Tests added or extended (all in `tests/smoke.spec.ts`):**
+
+- `renames a saved vehicle and keeps free notes` — rename commits, focus returns to the trigger, and notes persist across reload.
+- `refreshes a mounted garage card when its stored notes change` — an external restore that changes stored notes updates the field rather than leaving the old text behind.
+- `reports rejected garage writes and recovers when storage works` — stubs `localStorage.setItem` to reject garage writes for rename, notes, remove, and save-to-garage; asserts each failure alert and that the failed action leaves its state unchanged (form open, notes not marked saved, card kept, button still "Save to My Garage"), then restores storage and confirms each success state.
+- `syncs a rename and notes save to another open tab` — opens a second page in the same context, renames and saves notes in the first, and asserts the second updates through the `storage` event with no reload.
+- `moves My Garage between browsers with a transfer code` — extended to assert a custom name and its notes survive export and import.
+- `saves a VIN result to My Garage and reopens it` — still covers the save/reopen path.
+
 ---
 
 ## 5. This follow-up set: ranked by value
@@ -174,7 +196,9 @@ Why not higher: accessibility is automated-only, performance has no real-user da
 
 ---
 
-## 7. Verification evidence (2026-11-20)
+## 7. Verification evidence
+
+### 2026-11-20 — follow-up set
 
 | Check | Result |
 |---|---|
@@ -194,6 +218,44 @@ Why not higher: accessibility is automated-only, performance has no real-user da
 
 The first prerender attempt failed only because this worktree lacks Playwright's bundled Chromium headless shell. Re-running with the installed Edge channel succeeded. CI installs Chromium, so this is an environment limitation, not an application failure.
 
+### 2026-11-22 — My Garage review pass
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `npm run build` | Pass; entry **253.05 kB / 81.42 kB gzip** |
+| Garage and saved-vehicle Playwright group | **6 passed** in 13.4 s |
+| Rejected-save regression test | Pass: name and notes alerts, no false success, success state after storage recovers |
+| GitHub Actions “Deploy to GitHub Pages” run `45019180818` (commit `a4e4331`) | Success: build, deploy, and deployed Pages smoke |
+| Live backup-restore check on the deployed origin | Pass: mounted card's notes changed from `Before restore` to `Restored notes`, no alert, `localStorage` held the restored notes |
+| Deployed entry asset | `index-B2oyMPe3.js` (previous `index-Cjf6IEQY.js`) |
+
+### 2026-11-22 — Cross-tab garage sync
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `syncs a rename and notes save to another open tab` | Pass: rename and notes save in one tab appear in a second open tab without a reload |
+| Garage and saved-vehicle Playwright group (now seven tests) | **7 passed** in 13.8 s |
+| Live two-tab check (deployed origin) | Pass: rename and notes save in one tab appeared in a second tab without a reload |
+
+Committed as `e924f0f` and deployed in Pages run `45020132430`.
+
+### 2026-11-22 — Garage write-failure coverage
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `reports rejected garage writes and recovers when storage works` | Pass: rename, notes, remove, and save-to-garage failure alerts plus recovery |
+| Garage and saved-vehicle Playwright group | **7 passed** in 22.6 s |
+| Live remove check (deployed origin) | Pass: blocked remove showed the alert and kept the card; retry removed it |
+| Live save-to-garage check (deployed origin) | Pass: blocked save showed the alert and kept the button label; retry saved |
+
+Committed as `e924f0f` and deployed in Pages run `45020132430`; live checks passed.
+
 ---
 
 ## 8. Known limitations and open risks
@@ -206,6 +268,10 @@ The first prerender attempt failed only because this worktree lacks Playwright's
 - **No server-side rate limiting** because there is no server; NHTSA calls are direct and subject to its availability/CORS behavior.
 - **Browser cameras and OCR** require real device testing; Playwright uses mocked media streams.
 - **A stale lazy chunk after a deploy** is handled by the existing error boundary reload, but has not been chaos-tested against a live Pages rollout.
+- **My Garage is browser-local.** Vehicles, names, and notes live in `localStorage`; there is no account or cloud sync, and clearing site data removes them. Cross-tab updates depend on the browser `storage` event, which fires in other same-origin tabs but not in the tab that wrote.
+- **Garage caps:** 12 vehicles, 80-character names, 4,000-character notes. Extra vehicles are not stored; longer notes are truncated at the same limit the backup importer uses.
+- **Backup files are user-managed.** They contain VINs and free-text notes and are never uploaded. A backup covers My Garage only — not Recall Watch, fitment requests, or demand captures.
+- **Restore is destructive by design.** Restoring a backup replaces the whole garage; the panel previews the file first, but there is no undo beyond keeping another backup.
 
 ---
 
@@ -221,7 +287,7 @@ The first prerender attempt failed only because this worktree lacks Playwright's
 ## 10. Session handoff
 
 - Worktree: `C:\Users\GNKU0BO\.freebuff\worktrees\de09c1dc\a6d163dd7de11114ee28c64d1b66174d1cf7c85f33b6be42`
-- App commit `abab5f5` is live at https://len-golani.github.io/AutoParts-fb/. The tracker is a separate documentation commit.
+- App commit `e924f0f` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45020132430`). The tracker is a separate documentation commit.
 - Do not commit, push, or deploy further without explicit authorization.
 - Dev server may be running at `http://127.0.0.1:5173`; reuse it rather than starting a duplicate.
 - Test fixtures: 2020 Civic VIN `2HGFC2F59LH500001`; other examples `1HGCM82633A004352`, `4T1BF3EK8AU561547`.
@@ -229,3 +295,6 @@ The first prerender attempt failed only because this worktree lacks Playwright's
 - When changing the camera/photo path: preserve local-only processing and update both the disclosure and upload-failure tests.
 - When changing colors, focus styles, labels, or interactive controls: run `tests/accessibility.spec.ts` and the relevant responsive test; never suppress an Axe rule to get green.
 - When changing catalogue data: run `npm run validate:parts` and keep `docs/parts-provenance.md` truthful.
+- When changing My Garage: keep every write in `src/services/garage.ts` returning a boolean and surface failures with `GARAGE_WRITE_FAILED_MESSAGE`; run the garage Playwright group (`--grep "My Garage|saved vehicle|garage card|rejected garage|another open tab"`).
+- When changing notes or backup: keep `GARAGE_NOTES_MAX_LENGTH` shared by the service, textarea, and backup importer, and preserve replace-on-restore semantics — a backup import must not merge.
+- When changing garage updates: keep the `storage` bridge in `src/services/garage.ts` and have consumers listen to `garageChangedEvent()`; the two-tab regression test is `syncs a rename and notes save to another open tab`.
