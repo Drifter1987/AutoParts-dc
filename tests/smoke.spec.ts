@@ -926,6 +926,38 @@ test.describe('product safety and handoff layer', () => {
     await expect(page.getByText(/Self-reported repair status/i)).toBeVisible();
   });
 
+  test('syncs Recall Watch additions and removals across tabs', async ({ page, context }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await expect(page.getByRole('button', { name: 'Watch recalls' })).toBeVisible();
+
+    const other = await context.newPage();
+    const external: string[] = [];
+    await other.route(/^https?:\/\//, route => {
+      const url = new URL(route.request().url());
+      if (url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]') {
+        return route.continue();
+      }
+      external.push(url.href);
+      return route.abort();
+    });
+    await stubNhtsa(other);
+    await stubGoogleFonts(other);
+    await other.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await expect(other.getByRole('button', { name: 'Watch recalls' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await expect(other.getByRole('link', { name: /Recall watch is active/i })).toBeVisible();
+
+    await page.goto('/recall-center');
+    await page.getByRole('button', { name: `Stop watching ${CIVIC_2020_VIN}` }).click();
+    await expect(other.getByRole('button', { name: 'Watch recalls' })).toBeVisible();
+
+    await other.getByRole('button', { name: 'Watch recalls' }).click();
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic/i })).toBeVisible();
+
+    expect(external).toEqual([]);
+  });
+
   test('auto-rechecks saved vehicles and keeps new-campaign status until reviewed', async ({ page }) => {
     const recallPattern = /^https:\/\/api\.nhtsa\.gov\/recalls\//;
     await page.unroute(recallPattern);

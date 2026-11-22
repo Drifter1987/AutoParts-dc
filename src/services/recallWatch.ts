@@ -188,6 +188,25 @@ export function recallWatchChangedEvent(): string {
   return CHANGE_EVENT;
 }
 
+/**
+ * Browsers fire `storage` only in the tabs that did not write. Bridge it to the
+ * in-page event so Recall Watch consumers refresh regardless of which tab made
+ * the change.
+ */
+function onStorage(event: StorageEvent): void {
+  if (event.key !== null && event.key !== STORAGE_KEY) return;
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+// HMR can re-run this module; register the bridge once per document.
+if (typeof window !== 'undefined') {
+  const tracked = window as Window & { __autopartsRecallWatchStorageSync?: boolean };
+  if (!tracked.__autopartsRecallWatchStorageSync) {
+    tracked.__autopartsRecallWatchStorageSync = true;
+    window.addEventListener('storage', onStorage);
+  }
+}
+
 export function getSeenAt(watch: RecallWatch, campaignNumber: string): string | null {
   return (
     watch.campaignHistory.find(item => item.campaignNumber === campaignNumber)?.firstSeenAt ??
