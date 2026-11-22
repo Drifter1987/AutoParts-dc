@@ -264,7 +264,7 @@ export default function RecallCenterPage() {
                       </span>
                       <button
                         type="button"
-                        className={`btn btn-ghost ${styles.small}`}
+                        className={`btn btn-ghost ${styles.small} ${styles.watchRemove}`}
                         onClick={() => removeRecallWatch(watch.vin)}
                         aria-label={`Stop watching ${watch.vin}`}
                       >

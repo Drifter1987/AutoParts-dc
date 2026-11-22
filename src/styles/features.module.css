@@ -289,6 +289,13 @@
   font-size: 0.76rem;
 }
 
+@media (max-width: 640px) {
+  .watchRemove {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 .badgeRow {
   display: flex;
   align-items: center;
