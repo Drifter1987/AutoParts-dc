@@ -1,4 +1,4 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { stubGoogleFonts } from './google-fonts-stubs';
 import { stubNhtsa } from './nhtsa-stubs';
@@ -41,6 +41,26 @@ const CIVIC_2020_VIN = '2HGFC2F59LH500001';
 const CHECK_DIGIT_VIN = '4T1BF3EK8AU561547';
 // NHTSA returns no vehicle data for this VIN.
 const BOGUS_VIN = '00000000000000000';
+const GARAGE_KEY = 'autoparts.garage.v1';
+
+/** Make only garage writes fail, as a full or blocked localStorage would. */
+async function blockGarageWrites(page: Page): Promise<void> {
+  await page.evaluate(key => {
+    const original = Storage.prototype.setItem;
+    (window as Window & { __originalSetItem?: typeof original }).__originalSetItem = original;
+    Storage.prototype.setItem = function (this: Storage, name: string, value: string) {
+      if (name === key) throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      return original.call(this, name, value);
+    };
+  }, GARAGE_KEY);
+}
+
+async function restoreGarageWrites(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const w = window as Window & { __originalSetItem?: Storage['setItem'] };
+    if (w.__originalSetItem) Storage.prototype.setItem = w.__originalSetItem;
+  });
+}
 
 test.describe('VIN decoder', () => {
   test.beforeEach(async ({ page }) => {
@@ -310,6 +330,104 @@ test.describe('Civic parts vertical slice', () => {
     await expect(page.getByLabel('Notes for Weekend runabout')).toHaveValue(
       'Oil change due at 60k miles.',
     );
+  });
+
+  test('refreshes a mounted garage card when its stored notes change', async ({ page }) => {
+    await page.goto('/garage');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'autoparts.garage.v1',
+        JSON.stringify([
+          {
+            vin: '2HGFC2F59LH500001',
+            year: '2020',
+            make: 'HONDA',
+            model: 'Civic',
+            trim: 'EX',
+            engine: '1.5L Turbo',
+            name: null,
+            notes: 'Before restore',
+            savedAt: '2026-01-02T10:00:00.000Z',
+          },
+        ]),
+      );
+    });
+    await page.reload();
+
+    const notes = page.getByLabel('Notes for Civic EX 1.5L Turbo');
+    await expect(notes).toHaveValue('Before restore');
+
+    // A restore replaces stored notes while the card stays mounted.
+    await page.evaluate(() => {
+      const rows = JSON.parse(localStorage.getItem('autoparts.garage.v1') || '[]');
+      rows[0].notes = 'Restored notes';
+      localStorage.setItem('autoparts.garage.v1', JSON.stringify(rows));
+      window.dispatchEvent(new Event('autoparts:garage-changed'));
+    });
+
+    await expect(page.getByLabel('Notes for Civic EX 1.5L Turbo')).toHaveValue('Restored notes');
+  });
+
+  test('reports rejected name and notes saves and saves once storage works', async ({ page }) => {
+    await page.goto('/garage');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'autoparts.garage.v1',
+        JSON.stringify([
+          {
+            vin: '2HGFC2F59LH500001',
+            year: '2020',
+            make: 'HONDA',
+            model: 'Civic',
+            trim: 'EX',
+            engine: '1.5L Turbo',
+            name: 'Daily driver',
+            notes: 'Old note',
+            savedAt: '2026-01-02T10:00:00.000Z',
+          },
+        ]),
+      );
+    });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Daily driver' })).toBeVisible();
+
+    await blockGarageWrites(page);
+
+    await page.getByRole('button', { name: 'Rename vehicle' }).click();
+    await page.getByLabel('Vehicle name').fill('Weekend toy');
+    await page.getByRole('button', { name: 'Save name' }).click();
+
+    await expect(page.getByRole('alert')).toHaveText(
+      'Could not update My Garage. Browser storage is unavailable or full.',
+    );
+    await expect(page.getByLabel('Vehicle name')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
+    const notes = page.getByLabel('Notes for Daily driver');
+    await notes.fill('Note the browser rejects');
+    await page.getByRole('button', { name: 'Save notes' }).click();
+
+    await expect(page.getByRole('alert')).toHaveText(
+      'Could not update My Garage. Browser storage is unavailable or full.',
+    );
+    await expect(page.getByText('Notes saved.')).toHaveCount(0);
+
+    await restoreGarageWrites(page);
+
+    await page.getByRole('button', { name: 'Save notes' }).click();
+    await expect(page.getByText('Notes saved.')).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Rename vehicle' }).click();
+    await page.getByLabel('Vehicle name').fill('Weekend toy');
+    await page.getByRole('button', { name: 'Save name' }).click();
+    await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
+    await expect(page.getByLabel('Vehicle name')).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
+    await expect(page.getByLabel('Notes for Weekend toy')).toHaveValue('Note the browser rejects');
   });
 });
 

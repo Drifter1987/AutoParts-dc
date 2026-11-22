@@ -6,6 +6,13 @@ const CHANGE_EVENT = 'autoparts:garage-changed';
 /** Mirror of the storage cap applied by write(). */
 export const GARAGE_MAX_VEHICLES = 12;
 
+/** Kept in step with the backup format so a restore round-trips notes intact. */
+export const GARAGE_NOTES_MAX_LENGTH = 4000;
+
+/** Shared failure copy for any garage write the browser refuses. */
+export const GARAGE_WRITE_FAILED_MESSAGE =
+  'Could not update My Garage. Browser storage is unavailable or full.';
+
 function read(): GarageVehicle[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -40,7 +47,7 @@ export function getDefaultVehicleName(
   vehicle: Pick<GarageVehicle, 'year' | 'make' | 'model' | 'trim' | 'engine'>,
 ): string {
   const fallback = [vehicle.year, vehicle.make].filter(Boolean).join(' ').trim();
-  const parts = [vehicle.model?.trim() || fallback || 'Saved vehicle'];
+  const parts = [vehicle.model.trim() || fallback || 'Saved vehicle'];
 
   const trim = vehicle.trim?.trim();
   if (trim && !normalizeName(parts.join(' ')).includes(normalizeName(trim))) {
@@ -73,7 +80,7 @@ export function isVehicleSaved(vin: string): boolean {
   return read().some(vehicle => vehicle.vin === vin);
 }
 
-export function saveVehicle(result: VINDecodeResult): void {
+export function saveVehicle(result: VINDecodeResult): boolean {
   const existing = read().find(vehicle => vehicle.vin === result.vin);
   const vehicle: GarageVehicle = {
     vin: result.vin,
@@ -86,7 +93,7 @@ export function saveVehicle(result: VINDecodeResult): void {
     notes: existing?.notes ?? '',
     savedAt: new Date().toISOString(),
   };
-  write([vehicle, ...read().filter(item => item.vin !== result.vin)]);
+  return write([vehicle, ...read().filter(item => item.vin !== result.vin)]);
 }
 
 /** Returns false when the browser refuses the write, so the caller can say so. */
@@ -101,11 +108,12 @@ export function renameGarageVehicle(vin: string, name: string): boolean {
 
 /** Returns false when the browser refuses the write, so the caller can say so. */
 export function updateGarageVehicleNotes(vin: string, notes: string): boolean {
-  return write(read().map(vehicle => (vehicle.vin === vin ? { ...vehicle, notes } : vehicle)));
+  const clean = notes.slice(0, GARAGE_NOTES_MAX_LENGTH);
+  return write(read().map(vehicle => (vehicle.vin === vin ? { ...vehicle, notes: clean } : vehicle)));
 }
 
-export function removeVehicle(vin: string): void {
-  write(read().filter(vehicle => vehicle.vin !== vin));
+export function removeVehicle(vin: string): boolean {
+  return write(read().filter(vehicle => vehicle.vin !== vin));
 }
 
 /** Merge a transfer bundle without duplicating VINs or losing the newest save. */

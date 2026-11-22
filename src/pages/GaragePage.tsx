@@ -4,6 +4,8 @@ import { BellRing, Bookmark, Car, ExternalLink, Pencil, Trash2 } from 'lucide-re
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { CATALOG_VEHICLES, getVehicleLabel, getVehiclePath } from '../services/parts';
 import {
+  GARAGE_NOTES_MAX_LENGTH,
+  GARAGE_WRITE_FAILED_MESSAGE,
   garageChangedEvent,
   getDefaultVehicleName,
   getGarageVehicleName,
@@ -16,9 +18,6 @@ import GarageBackupPanel from '../components/ui/GarageBackupPanel';
 import GarageTransferPanel from '../components/ui/GarageTransferPanel';
 import type { GarageVehicle } from '../types';
 import styles from '../styles/parts.module.css';
-
-const STORAGE_SAVE_FAILED =
-  'Could not save on this device. Browser storage is unavailable or full.';
 
 function catalogPathForSaved(saved: GarageVehicle): string | null {
   const vehicle = CATALOG_VEHICLES.find(
@@ -41,21 +40,18 @@ function GarageVehicleCard({
   const defaultName = getDefaultVehicleName(vehicle);
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState(displayName);
-  const [notes, setNotes] = useState(vehicle.notes ?? '');
+  // Null means "show the stored notes". A draft exists only while the user is
+  // editing, so a restore or import that changes storage is reflected here.
+  const [draftNotes, setDraftNotes] = useState<string | null>(null);
   const [notesSaved, setNotesSaved] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [notesError, setNotesError] = useState<string | null>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const renameButtonRef = useRef<HTMLButtonElement>(null);
-  const renameFormId = `garage-rename-${vehicle.vin}`;
   const nameFieldId = `garage-name-${vehicle.vin}`;
   const notesFieldId = `garage-notes-${vehicle.vin}`;
 
-  useEffect(() => {
-    if (!renaming) return;
-    renameInputRef.current?.focus();
-    renameInputRef.current?.select();
-  }, [renaming]);
+  const notes = draftNotes ?? vehicle.notes ?? '';
 
   const startRename = () => {
     setDraftName(displayName);
@@ -63,33 +59,42 @@ function GarageVehicleCard({
     setRenaming(true);
   };
 
+  const returnFocusToRenameButton = () => {
+    window.requestAnimationFrame(() => renameButtonRef.current?.focus());
+  };
+
   const cancelRename = () => {
     setNameError(null);
     setRenaming(false);
-    window.requestAnimationFrame(() => renameButtonRef.current?.focus());
+    returnFocusToRenameButton();
   };
 
   const saveRename = (event: FormEvent) => {
     event.preventDefault();
     if (!renameGarageVehicle(vehicle.vin, draftName)) {
       // Keep the form open so the draft is not lost.
-      setNameError(STORAGE_SAVE_FAILED);
+      setNameError(GARAGE_WRITE_FAILED_MESSAGE);
       return;
     }
     setNameError(null);
     setRenaming(false);
-    window.requestAnimationFrame(() => renameButtonRef.current?.focus());
+    returnFocusToRenameButton();
   };
 
   const saveNotes = () => {
-    if (notes === (vehicle.notes ?? '')) return;
-    if (updateGarageVehicleNotes(vehicle.vin, notes)) {
+    if (draftNotes === null) return;
+    if (draftNotes === (vehicle.notes ?? '')) {
+      setDraftNotes(null);
+      return;
+    }
+    if (updateGarageVehicleNotes(vehicle.vin, draftNotes)) {
+      setDraftNotes(null);
       setNotesSaved(true);
       setNotesError(null);
       return;
     }
     setNotesSaved(false);
-    setNotesError(STORAGE_SAVE_FAILED);
+    setNotesError(GARAGE_WRITE_FAILED_MESSAGE);
   };
 
   return (
@@ -105,7 +110,6 @@ function GarageVehicleCard({
           className={`btn btn-ghost ${styles.smallButton}`}
           onClick={startRename}
           aria-expanded={renaming}
-          aria-controls={renameFormId}
         >
           <Pencil size={13} /> Rename vehicle
         </button>
@@ -117,16 +121,16 @@ function GarageVehicleCard({
       </p>
 
       {renaming && (
-        <form id={renameFormId} className={styles.garageForm} onSubmit={saveRename}>
+        <form className={styles.garageForm} onSubmit={saveRename}>
           <label className={styles.garageFieldLabel} htmlFor={nameFieldId}>
             Vehicle name
           </label>
           <input
-            ref={renameInputRef}
             id={nameFieldId}
             className="input"
             value={draftName}
             onChange={event => setDraftName(event.target.value)}
+            onFocus={event => event.currentTarget.select()}
             onKeyDown={event => {
               if (event.key === 'Escape') {
                 event.preventDefault();
@@ -136,6 +140,7 @@ function GarageVehicleCard({
             maxLength={80}
             placeholder={defaultName}
             autoComplete="off"
+            autoFocus
           />
           <p className={styles.partMeta}>Leave blank to use “{defaultName}”.</p>
           {nameError && (
@@ -168,11 +173,12 @@ function GarageVehicleCard({
           aria-label={`Notes for ${displayName}`}
           value={notes}
           onChange={event => {
-            setNotes(event.target.value);
+            setDraftNotes(event.target.value);
             setNotesSaved(false);
           }}
           onBlur={saveNotes}
           rows={3}
+          maxLength={GARAGE_NOTES_MAX_LENGTH}
           placeholder="Free notes — service history, parts to price, dealer quotes…"
         />
         <div className={styles.garageNotesFooter}>
@@ -226,12 +232,21 @@ function GarageVehicleCard({
         <button
           type="button"
           className={`btn btn-ghost ${styles.smallButton}`}
-          onClick={() => removeVehicle(vehicle.vin)}
+          onClick={() => {
+            if (!removeVehicle(vehicle.vin)) {
+              setRemoveError(GARAGE_WRITE_FAILED_MESSAGE);
+            }
+          }}
           aria-label={`Remove ${displayName} from My Garage`}
         >
           <Trash2 size={13} /> Remove
         </button>
       </div>
+      {removeError && (
+        <p className={styles.garageSaveError} role="alert">
+          {removeError}
+        </p>
+      )}
     </article>
   );
 }

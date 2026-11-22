@@ -1,6 +1,7 @@
 import type { GarageVehicle } from '../types';
 import {
   GARAGE_MAX_VEHICLES,
+  GARAGE_NOTES_MAX_LENGTH,
   getGarageVehicles,
   replaceGarageVehicles,
 } from './garage';
@@ -58,7 +59,7 @@ function normalizeVehicle(value: unknown): GarageVehicle | null {
     trim: nullableText(source.trim, 120),
     engine: nullableText(source.engine, 160),
     name: nullableText(source.name, 80),
-    notes: text(source.notes, 4000),
+    notes: text(source.notes, GARAGE_NOTES_MAX_LENGTH),
     savedAt,
   };
 }
