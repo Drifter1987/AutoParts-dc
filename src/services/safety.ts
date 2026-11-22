@@ -48,10 +48,10 @@ interface InvestigationIndex {
 
 export interface SafetyIntelligence {
   complaints: SafetyComplaint[];
-  complaintsStatus: 'live' | 'unavailable' | 'not-configured';
+  complaintsStatus: 'live' | 'unavailable' | 'not-configured' | 'not-applicable';
   complaintsCheckedAt: string | null;
   investigations: SafetyInvestigation[];
-  investigationsStatus: 'live' | 'unavailable' | 'not-configured';
+  investigationsStatus: 'live' | 'unavailable' | 'not-configured' | 'not-applicable';
   investigationsCheckedAt: string | null;
   investigationsSource: string | null;
   investigationsUpdatedAt: string | null;
@@ -184,6 +184,22 @@ async function fetchComplaints(result: VINDecodeResult): Promise<SafetyComplaint
 export async function getSafetyIntelligence(
   result: VINDecodeResult,
 ): Promise<SafetyIntelligence> {
+  if (result.model_source === 'vin-pattern') {
+    return {
+      complaints: [],
+      complaintsStatus: 'not-applicable',
+      complaintsCheckedAt: null,
+      investigations: [],
+      investigationsStatus: 'not-applicable',
+      investigationsCheckedAt: null,
+      investigationsSource: null,
+      investigationsUpdatedAt: null,
+      manufacturerCommunications: [],
+      communicationsStatus: 'not-configured',
+      note: 'NHTSA complaints and investigations are US-market data. This European VIN was decoded from its VIN pattern, so model-level US data was not queried.',
+    };
+  }
+
   let complaints: SafetyComplaint[] = [];
   let complaintsStatus: SafetyIntelligence['complaintsStatus'] = 'live';
   let complaintsCheckedAt: string | null = null;

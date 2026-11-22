@@ -42,20 +42,21 @@ const CHECK_DIGIT_VIN = '4T1BF3EK8AU561547';
 // NHTSA returns no vehicle data for this VIN.
 const BOGUS_VIN = '00000000000000000';
 const GARAGE_KEY = 'autoparts.garage.v1';
+const RECALL_WATCH_KEY = 'autoparts.recall-watch.v1';
 
-/** Make only garage writes fail, as a full or blocked localStorage would. */
-async function blockGarageWrites(page: Page): Promise<void> {
-  await page.evaluate(key => {
+/** Make writes to one key fail, as a full or blocked localStorage would. */
+async function blockStorageWrites(page: Page, key: string): Promise<void> {
+  await page.evaluate(name => {
     const original = Storage.prototype.setItem;
     (window as Window & { __originalSetItem?: typeof original }).__originalSetItem = original;
-    Storage.prototype.setItem = function (this: Storage, name: string, value: string) {
-      if (name === key) throw new DOMException('Quota exceeded', 'QuotaExceededError');
-      return original.call(this, name, value);
+    Storage.prototype.setItem = function (this: Storage, target: string, value: string) {
+      if (target === name) throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      return original.call(this, target, value);
     };
-  }, GARAGE_KEY);
+  }, key);
 }
 
-async function restoreGarageWrites(page: Page): Promise<void> {
+async function restoreStorageWrites(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as Window & { __originalSetItem?: Storage['setItem'] };
     if (w.__originalSetItem) Storage.prototype.setItem = w.__originalSetItem;
@@ -391,7 +392,7 @@ test.describe('Civic parts vertical slice', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Daily driver' })).toBeVisible();
 
-    await blockGarageWrites(page);
+    await blockStorageWrites(page, GARAGE_KEY);
 
     await page.getByRole('button', { name: 'Rename vehicle' }).click();
     await page.getByLabel('Vehicle name').fill('Weekend toy');
@@ -413,7 +414,7 @@ test.describe('Civic parts vertical slice', () => {
     );
     await expect(page.getByText('Notes saved.')).toHaveCount(0);
 
-    await restoreGarageWrites(page);
+    await restoreStorageWrites(page);
 
     await page.getByRole('button', { name: 'Save notes' }).click();
     await expect(page.getByText('Notes saved.')).toBeVisible();
@@ -429,14 +430,14 @@ test.describe('Civic parts vertical slice', () => {
     await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
     await expect(page.getByLabel('Notes for Weekend toy')).toHaveValue('Note the browser rejects');
 
-    await blockGarageWrites(page);
+    await blockStorageWrites(page, GARAGE_KEY);
     await page.getByRole('button', { name: 'Remove Weekend toy from My Garage' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'Could not update My Garage. Browser storage is unavailable or full.',
     );
     await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
 
-    await restoreGarageWrites(page);
+    await restoreStorageWrites(page);
     await page.getByRole('button', { name: 'Remove Weekend toy from My Garage' }).click();
     await expect(page.getByRole('heading', { name: 'Weekend toy' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'No saved vehicles yet' })).toBeVisible();
@@ -445,14 +446,14 @@ test.describe('Civic parts vertical slice', () => {
     await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
     await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
 
-    await blockGarageWrites(page);
+    await blockStorageWrites(page, GARAGE_KEY);
     await page.getByRole('button', { name: 'Save to My Garage' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'Could not update My Garage. Browser storage is unavailable or full.',
     );
     await expect(page.getByRole('button', { name: 'Save to My Garage' })).toBeVisible();
 
-    await restoreGarageWrites(page);
+    await restoreStorageWrites(page);
     await page.getByRole('button', { name: 'Save to My Garage' }).click();
     await expect(page.getByRole('button', { name: 'Saved to My Garage' })).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
@@ -506,6 +507,83 @@ test.describe('Civic parts vertical slice', () => {
     await page.getByLabel('Notes for Shared name').blur();
 
     await expect(other.getByLabel('Notes for Shared name')).toHaveValue('Saved from the first tab');
+    expect(external).toEqual([]);
+  });
+
+  test('keeps another tab run of the garage intact when an older tab saves notes', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('/garage');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'autoparts.garage.v1',
+        JSON.stringify([
+          {
+            vin: '2HGFC2F59LH500001',
+            year: '2020',
+            make: 'HONDA',
+            model: 'Civic',
+            trim: 'EX',
+            engine: '1.5L Turbo',
+            name: null,
+            notes: '',
+            savedAt: '2026-01-02T10:00:00.000Z',
+          },
+        ]),
+      );
+    });
+    await page.reload();
+
+    // Hold an unsaved draft while the other tab renames this vehicle and saves
+    // a second one. Saving the draft must apply to the freshest stored garage.
+    const civic = page.locator('article').filter({ hasText: CIVIC_2020_VIN });
+    const notes = civic.getByLabel(/^Notes for /);
+    await notes.fill('Typed before the other tab changed anything');
+
+    const other = await context.newPage();
+    const external: string[] = [];
+    await other.route(/^https?:\/\//, route => {
+      const url = new URL(route.request().url());
+      if (url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]') {
+        return route.continue();
+      }
+      external.push(url.href);
+      return route.abort();
+    });
+    await stubNhtsa(other);
+    await stubGoogleFonts(other);
+
+    await other.goto(`/vin?vin=${KNOWN_GOOD_VIN}`);
+    await other.getByRole('button', { name: 'Save to My Garage' }).click();
+    await expect(other.getByRole('button', { name: 'Saved to My Garage' })).toBeVisible();
+
+    await other.goto('/garage');
+    const otherCivic = other.locator('article').filter({ hasText: CIVIC_2020_VIN });
+    await otherCivic.getByRole('button', { name: 'Rename vehicle' }).click();
+    await otherCivic.getByLabel('Vehicle name').fill('Shared name');
+    await otherCivic.getByRole('button', { name: 'Save name' }).click();
+    await expect(other.getByRole('heading', { name: 'Shared name' })).toBeVisible();
+
+    await notes.blur();
+
+    await expect(civic.getByRole('heading', { name: 'Shared name' })).toBeVisible();
+    await expect(civic.getByLabel(/^Notes for /)).toHaveValue(
+      'Typed before the other tab changed anything',
+    );
+
+    const stored = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('autoparts.garage.v1') || '[]') as {
+        vin: string;
+        name: string | null;
+        notes: string;
+      }[],
+    );
+    expect(stored).toHaveLength(2);
+    const storedCivic = stored.find(vehicle => vehicle.vin === '2HGFC2F59LH500001');
+    expect(storedCivic?.name).toBe('Shared name');
+    expect(storedCivic?.notes).toBe('Typed before the other tab changed anything');
+    expect(stored.some(vehicle => vehicle.vin === '1HGCM82633A004352')).toBe(true);
     expect(external).toEqual([]);
   });
 });
@@ -956,6 +1034,144 @@ test.describe('product safety and handoff layer', () => {
     await expect(page.getByRole('heading', { name: /2020 HONDA Civic/i })).toBeVisible();
 
     expect(external).toEqual([]);
+  });
+
+  test('keeps a repair marked in another tab when a stale recheck finishes', async ({
+    page,
+    context,
+  }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+
+    // Hold this tab's recall request so its check resolves on a snapshot taken
+    // before the other tab acts.
+    let release: () => void = () => {};
+    const held = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    await page.route(/^https:\/\/api\.nhtsa\.gov\/recalls\//, async route => {
+      await held;
+      await route.fulfill({
+        json: {
+          Count: 1,
+          results: [
+            {
+              Manufacturer: 'Honda (American Honda Motor Co.)',
+              NHTSACampaignNumber: '21V215000',
+              Component: 'FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP',
+              Summary: 'The low-pressure fuel pump inside the fuel tank may fail.',
+            },
+          ],
+        },
+      });
+    });
+    await page.goto('/recall-center');
+    await expect(page.getByRole('heading', { name: 'Recall Watch' })).toBeVisible();
+
+    const other = await context.newPage();
+    const external: string[] = [];
+    await other.route(/^https?:\/\//, route => {
+      const url = new URL(route.request().url());
+      if (url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]') {
+        return route.continue();
+      }
+      external.push(url.href);
+      return route.abort();
+    });
+    await stubNhtsa(other);
+    await stubGoogleFonts(other);
+    await other.goto('/recall-center');
+    await other.getByRole('button', { name: 'Mark repaired' }).click();
+    await expect(other.getByText(/Repair marked/i)).toBeVisible();
+
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (
+              JSON.parse(localStorage.getItem('autoparts.recall-watch.v1') || '[]') as {
+                completedRepairs?: unknown[];
+              }[]
+            )[0]?.completedRepairs?.length ?? 0,
+        ),
+      )
+      .toBe(1);
+
+    release();
+    await expect(page.getByText(/campaign returned for the model year/i)).toBeVisible();
+    await expect(page.getByText(/Repair marked/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Mark repaired' })).toHaveCount(0);
+    expect(external).toEqual([]);
+  });
+
+  test('reports rejected Recall Watch writes and leaves the watch list intact', async ({ page }) => {
+    const failure = page
+      .getByRole('alert')
+      .filter({ hasText: 'Could not update Recall Watch' });
+
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await expect(page.getByRole('button', { name: 'Watch recalls' })).toBeVisible();
+
+    await blockStorageWrites(page, RECALL_WATCH_KEY);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await expect(failure).toHaveText(
+      'Could not update Recall Watch. Browser storage is unavailable or full.',
+    );
+    // The button stays actionable and nothing reached storage.
+    await expect(page.getByRole('button', { name: 'Watch recalls' })).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), RECALL_WATCH_KEY)).toBeNull();
+
+    await restoreStorageWrites(page);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await expect(page.getByRole('link', { name: /Recall watch is active/i })).toBeVisible();
+    await expect(failure).toHaveCount(0);
+
+    await page.goto('/recall-center');
+    const remove = page.getByRole('button', { name: `Stop watching ${CIVIC_2020_VIN}` });
+    await expect(remove).toBeVisible();
+
+    await blockStorageWrites(page, RECALL_WATCH_KEY);
+    await remove.click();
+    await expect(failure).toHaveText(
+      'Could not update Recall Watch. Browser storage is unavailable or full.',
+    );
+    await expect(remove).toBeVisible();
+    expect(
+      await page.evaluate(
+        key => (JSON.parse(localStorage.getItem(key) || '[]') as unknown[]).length,
+        RECALL_WATCH_KEY,
+      ),
+    ).toBe(1);
+
+    await restoreStorageWrites(page);
+    await remove.click();
+    await expect(remove).toHaveCount(0);
+
+    // A save past the 24-watch cap must report instead of dropping the oldest watch.
+    await page.evaluate(key => {
+      const watches = Array.from({ length: 24 }, (_, index) => ({
+        vin: `TESTVIN${index}`,
+        make: 'HONDA',
+        model: 'Civic',
+        year: '2020',
+        addedAt: new Date(2020, 0, index + 1).toISOString(),
+      }));
+      localStorage.setItem(key, JSON.stringify(watches));
+    }, RECALL_WATCH_KEY);
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await expect(failure).toHaveText(
+      'Could not update Recall Watch. Remove a vehicle first; the watch list holds up to 24.',
+    );
+    expect(
+      await page.evaluate(
+        key => {
+          const watches = JSON.parse(localStorage.getItem(key) || '[]') as { vin: string }[];
+          return { count: watches.length, oldest: watches[0]?.vin };
+        },
+        RECALL_WATCH_KEY,
+      ),
+    ).toEqual({ count: 24, oldest: 'TESTVIN0' });
   });
 
   test('keeps the Remove button tappable on mobile without enlarging it on desktop', async ({

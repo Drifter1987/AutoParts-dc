@@ -203,6 +203,31 @@
   color: #81d4fa;
 }
 
+/* ── VIN-pattern model note ─────────────────────────────────────────────── */
+.inferred {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-4) var(--space-6) 0;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(79, 195, 247, 0.07);
+  border: 1px solid rgba(79, 195, 247, 0.22);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.inferred svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ice);
+}
+
+.inferred strong {
+  color: var(--ice);
+}
+
 /* ── Warning ────────────────────────────────────────────────────────────── */
 .warning {
   margin: 0 var(--space-6) var(--space-4);

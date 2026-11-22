@@ -17,10 +17,12 @@ import {
   getRecallWatches,
   markRepairCompleted,
   recallWatchChangedEvent,
+  recallWatchWriteError,
   recordRecallCheck,
   removeRecallWatch,
   setRecallWatchOptIn,
   unmarkRepairCompleted,
+  type RecallWatchWriteOutcome,
 } from '../services/recallWatch';
 import { getRecallsForVehicle, nhtsaCampaignUrl, nhtsaRecallUrl, type VehicleRecall } from '../services/recalls';
 import { getCatalogVehicle, getVehiclePath } from '../services/parts';
@@ -63,6 +65,7 @@ export default function RecallCenterPage() {
   const [watches, setWatches] = useState<RecallWatch[]>(() => getRecallWatches());
   const [state, setState] = useState<Record<string, WatchState>>({});
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+  const [writeErrors, setWriteErrors] = useState<Record<string, string>>({});
   const inFlight = useRef(new Set<string>());
 
   usePageMetadata(
@@ -85,6 +88,21 @@ export default function RecallCenterPage() {
     return () => window.removeEventListener(recallWatchChangedEvent(), refresh);
   }, []);
 
+  /** Report a refused write and return false so the success state is skipped. */
+  const reportWrite = (vin: string, outcome: RecallWatchWriteOutcome): boolean => {
+    const failure = recallWatchWriteError(outcome);
+    setWriteErrors(previous => {
+      if (!failure) {
+        if (!(vin in previous)) return previous;
+        const next = { ...previous };
+        delete next[vin];
+        return next;
+      }
+      return { ...previous, [vin]: failure };
+    });
+    return failure === null;
+  };
+
   const checkWatch = useCallback(async (watch: RecallWatch, automatic = false) => {
     if (inFlight.current.has(watch.vin)) return;
     inFlight.current.add(watch.vin);
@@ -100,6 +118,8 @@ export default function RecallCenterPage() {
     try {
       const recalls = await getRecallsForVehicle(watch);
       const result = recordRecallCheck(watch, recalls);
+      // Another tab removed this watch while the request was in flight.
+      if (!result) return;
       setState(previous => ({
         ...previous,
         [watch.vin]: {
@@ -177,7 +197,7 @@ export default function RecallCenterPage() {
         );
       }
     }
-    setRecallWatchOptIn(watch.vin, next);
+    reportWrite(watch.vin, setRecallWatchOptIn(watch.vin, next));
     setWatches(getRecallWatches());
   };
 
@@ -265,13 +285,27 @@ export default function RecallCenterPage() {
                       <button
                         type="button"
                         className={`btn btn-ghost ${styles.small} ${styles.watchRemove}`}
-                        onClick={() => removeRecallWatch(watch.vin)}
+                        onClick={() => {
+                          reportWrite(watch.vin, removeRecallWatch(watch.vin));
+                          setWatches(getRecallWatches());
+                        }}
                         aria-label={`Stop watching ${watch.vin}`}
                       >
                         <Trash2 size={13} /> Remove
                       </button>
                     </div>
                   </div>
+
+                  {writeErrors[watch.vin] && (
+                    <div
+                      className={`${styles.status} ${styles.statusError}`}
+                      role="alert"
+                      style={{ marginBottom: 'var(--space-3)' }}
+                    >
+                      <AlertTriangle size={16} aria-hidden="true" />
+                      <span>{writeErrors[watch.vin]}</span>
+                    </div>
+                  )}
 
                   <div className={styles.inlineActions} style={{ marginBottom: 'var(--space-3)' }}>
                     <a
@@ -338,7 +372,7 @@ export default function RecallCenterPage() {
                         type="button"
                         className={`btn btn-ghost ${styles.small}`}
                         onClick={() => {
-                          acknowledgeNewCampaigns(watch.vin);
+                          reportWrite(watch.vin, acknowledgeNewCampaigns(watch.vin));
                           setWatches(getRecallWatches());
                         }}
                       >
@@ -398,7 +432,10 @@ export default function RecallCenterPage() {
                                 type="button"
                                 className={`btn btn-ghost ${styles.small}`}
                                 onClick={() => {
-                                  unmarkRepairCompleted(watch.vin, recall.campaignNumber);
+                                  reportWrite(
+                                    watch.vin,
+                                    unmarkRepairCompleted(watch.vin, recall.campaignNumber),
+                                  );
                                   setWatches(getRecallWatches());
                                 }}
                               >
@@ -409,9 +446,17 @@ export default function RecallCenterPage() {
                                 type="button"
                                 className={`btn btn-ghost ${styles.small}`}
                                 onClick={() => {
-                                  markRepairCompleted(watch.vin, recall.campaignNumber);
+                                  const saved = reportWrite(
+                                    watch.vin,
+                                    markRepairCompleted(watch.vin, recall.campaignNumber),
+                                  );
                                   setWatches(getRecallWatches());
-                                  trackEvent('recall_repair_marked', { vin: watch.vin, campaign: recall.campaignNumber });
+                                  if (saved) {
+                                    trackEvent('recall_repair_marked', {
+                                      vin: watch.vin,
+                                      campaign: recall.campaignNumber,
+                                    });
+                                  }
                                 }}
                               >
                                 <Check size={12} /> Mark repaired

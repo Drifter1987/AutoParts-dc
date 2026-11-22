@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { AUDI_FLEET_VINS } from './fleet-vins';
 
 interface DecodeFixture {
   Make: string;
@@ -42,7 +43,21 @@ const EMPTY_DECODE: DecodeFixture = {
   ErrorText: '',
 };
 
+// The fleet VINs return AUDI and a model year from vPIC, but no model.
+const AUDI_FLEET_FIXTURES: Record<string, Partial<DecodeFixture>> = {};
+for (const vehicle of AUDI_FLEET_VINS) {
+  if (vehicle.vin.length !== 17) continue;
+  AUDI_FLEET_FIXTURES[vehicle.vin] = {
+    Make: 'AUDI',
+    Model: '',
+    ModelYear: vehicle.year,
+    ErrorCode: '5',
+    ErrorText: '5 - VIN has errors in few positions. See error text for details.',
+  };
+}
+
 const DECODE_FIXTURES: Record<string, Partial<DecodeFixture>> = {
+  ...AUDI_FLEET_FIXTURES,
   '1HGCM82633A004352': {
     Make: 'HONDA',
     Model: 'Accord',
@@ -102,6 +117,14 @@ const DECODE_FIXTURES: Record<string, Partial<DecodeFixture>> = {
     EngineCylinders: '4',
     ErrorCode: '1',
     ErrorText: '1 - Check Digit (9th position) does not calculate properly.',
+  },
+  // International-market Renault VIN: vPIC returned only the model year.
+  VF1RFB00X12345678: {
+    Make: '',
+    Model: '',
+    ModelYear: '2001',
+    ErrorCode: '0',
+    ErrorText: '0 - VIN decoded clean. Check Digit (9th position) is correct.',
   },
   '00000000000000000': {
     ErrorCode: '6',

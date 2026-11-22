@@ -9,6 +9,28 @@ import type {
 const STORAGE_KEY = 'autoparts.recall-watch.v1';
 const CHANGE_EVENT = 'autoparts:recall-watch-changed';
 
+/** Mirror of the storage cap applied by write(). */
+export const RECALL_WATCH_MAX_WATCHES = 24;
+
+/** Shared failure copy for any Recall Watch write the browser refuses. */
+export const RECALL_WATCH_WRITE_FAILED_MESSAGE =
+  'Could not update Recall Watch. Browser storage is unavailable or full.';
+
+/** Shown instead of silently dropping the oldest watch when the list is at its cap. */
+export const RECALL_WATCH_LIMIT_MESSAGE =
+  'Could not update Recall Watch. Remove a vehicle first; the watch list holds up to 24.';
+
+export type StoredWriteOutcome = 'saved' | 'rejected' | 'full';
+
+export type RecallWatchWriteOutcome = StoredWriteOutcome | 'missing';
+
+/** Copy for a failed write, or null when the change was stored or the watch is gone. */
+export function recallWatchWriteError(outcome: RecallWatchWriteOutcome): string | null {
+  if (outcome === 'rejected') return RECALL_WATCH_WRITE_FAILED_MESSAGE;
+  if (outcome === 'full') return RECALL_WATCH_LIMIT_MESSAGE;
+  return null;
+}
+
 function read(): RecallWatch[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -43,12 +65,17 @@ function read(): RecallWatch[] {
   }
 }
 
-function write(watches: RecallWatch[]): void {
+function write(watches: RecallWatch[]): StoredWriteOutcome {
+  // Truncating here would silently drop a watch, so a save past the cap fails
+  // the same way a blocked write does and the caller can report it.
+  if (watches.length > RECALL_WATCH_MAX_WATCHES) return 'full';
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(watches.slice(0, 24)));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(watches));
     window.dispatchEvent(new Event(CHANGE_EVENT));
+    return 'saved';
   } catch {
     // localStorage may be unavailable in private/restricted contexts.
+    return 'rejected';
   }
 }
 
@@ -60,8 +87,32 @@ export function getRecallWatch(vin: string): RecallWatch | null {
   return read().find(watch => watch.vin === vin) ?? null;
 }
 
-export function watchRecallResult(result: VINDecodeResult): RecallWatch {
-  const existing = getRecallWatch(result.vin);
+/**
+ * Apply a change to the freshest stored watch. localStorage has no transaction
+ * API, so the read has to be part of the same synchronous read-modify-write as
+ * the write: a mutation based on a snapshot taken earlier can overwrite another
+ * tab's repair, alert opt-in, or review state — or resurrect a removed watch.
+ * Returns 'missing' when the watch is no longer stored.
+ */
+function updateWatch(
+  vin: string,
+  change: (current: RecallWatch) => RecallWatch,
+): RecallWatchWriteOutcome {
+  const watches = read();
+  const index = watches.findIndex(watch => watch.vin === vin);
+  if (index === -1) return 'missing';
+  watches[index] = change(watches[index]);
+  return write(watches);
+}
+
+export interface RecallWatchAddition {
+  watch: RecallWatch;
+  outcome: StoredWriteOutcome;
+}
+
+export function watchRecallResult(result: VINDecodeResult): RecallWatchAddition {
+  const watches = read();
+  const existing = watches.find(watch => watch.vin === result.vin);
   const next: RecallWatch = {
     vin: result.vin,
     year: result.year || existing?.year || '',
@@ -77,18 +128,19 @@ export function watchRecallResult(result: VINDecodeResult): RecallWatch {
     newCampaignsDetectedAt: existing?.newCampaignsDetectedAt ?? null,
     completedRepairs: existing?.completedRepairs ?? [],
   };
-  write([next, ...read().filter(watch => watch.vin !== next.vin)]);
-  return next;
+  const outcome = write([next, ...watches.filter(watch => watch.vin !== next.vin)]);
+  return { watch: next, outcome };
 }
 
-export function removeRecallWatch(vin: string): void {
-  write(read().filter(watch => watch.vin !== vin));
+export function removeRecallWatch(vin: string): RecallWatchWriteOutcome {
+  return write(read().filter(watch => watch.vin !== vin));
 }
 
-export function setRecallWatchOptIn(vin: string, notificationsOptIn: boolean): void {
-  write(
-    read().map(watch => (watch.vin === vin ? { ...watch, notificationsOptIn } : watch)),
-  );
+export function setRecallWatchOptIn(
+  vin: string,
+  notificationsOptIn: boolean,
+): RecallWatchWriteOutcome {
+  return updateWatch(vin, watch => ({ ...watch, notificationsOptIn }));
 }
 
 export interface RecallWatchCheck {
@@ -99,89 +151,89 @@ export interface RecallWatchCheck {
 /**
  * Records a model-year check. The first check establishes a baseline so we do
  * not call every existing campaign "new"; later checks return only additions.
+ * The result is rebased onto the stored watch because the request can take
+ * seconds, and another tab may have changed or removed it meanwhile. Returns
+ * null when the watch is no longer stored.
  */
 export function recordRecallCheck(
   watch: RecallWatch,
   recalls: VehicleRecallLike[],
-): RecallWatchCheck {
+): RecallWatchCheck | null {
   const checkedAt = new Date().toISOString();
-  const existing = new Map(watch.campaignHistory.map(item => [item.campaignNumber, item]));
-  const newCampaigns: string[] = [];
+  let newCampaigns: string[] = [];
+  const recorded: { watch: RecallWatch | null } = { watch: null };
 
-  for (const recall of recalls) {
-    if (!existing.has(recall.campaignNumber)) {
-      existing.set(recall.campaignNumber, {
-        campaignNumber: recall.campaignNumber,
-        firstSeenAt: checkedAt,
-      });
-      if (watch.lastCheckedAt) newCampaigns.push(recall.campaignNumber);
+  updateWatch(watch.vin, current => {
+    const existing = new Map(current.campaignHistory.map(item => [item.campaignNumber, item]));
+    const additions: string[] = [];
+
+    for (const recall of recalls) {
+      if (!existing.has(recall.campaignNumber)) {
+        existing.set(recall.campaignNumber, {
+          campaignNumber: recall.campaignNumber,
+          firstSeenAt: checkedAt,
+        });
+        if (current.lastCheckedAt) additions.push(recall.campaignNumber);
+      }
     }
-  }
 
-  const pendingNewCampaigns = new Set(watch.newCampaigns ?? []);
-  for (const campaignNumber of newCampaigns) pendingNewCampaigns.add(campaignNumber);
+    const pendingNewCampaigns = new Set(current.newCampaigns ?? []);
+    for (const campaignNumber of additions) pendingNewCampaigns.add(campaignNumber);
+    newCampaigns = additions;
 
-  const next: RecallWatch = {
-    ...watch,
-    lastCheckedAt: checkedAt,
-    campaignHistory: [...existing.values()],
-    newCampaigns: [...pendingNewCampaigns],
-    newCampaignsDetectedAt:
-      newCampaigns.length > 0
-        ? checkedAt
-        : watch.newCampaignsDetectedAt ?? null,
-  };
-  write(read().map(item => (item.vin === watch.vin ? next : item)));
-  return { watch: next, newCampaigns };
+    const next: RecallWatch = {
+      ...current,
+      lastCheckedAt: checkedAt,
+      campaignHistory: [...existing.values()],
+      newCampaigns: [...pendingNewCampaigns],
+      newCampaignsDetectedAt:
+        additions.length > 0 ? checkedAt : current.newCampaignsDetectedAt ?? null,
+    };
+    recorded.watch = next;
+    return next;
+  });
+
+  return recorded.watch ? { watch: recorded.watch, newCampaigns } : null;
 }
 
 /** Clear the unreviewed new-campaign marker after the user has seen it. */
-export function acknowledgeNewCampaigns(vin: string): RecallWatch | null {
-  const watch = getRecallWatch(vin);
-  if (!watch) return null;
-  const next: RecallWatch = {
+export function acknowledgeNewCampaigns(vin: string): RecallWatchWriteOutcome {
+  return updateWatch(vin, watch => ({
     ...watch,
     newCampaigns: [],
     newCampaignsDetectedAt: null,
-  };
-  write(read().map(item => (item.vin === vin ? next : item)));
-  return next;
+  }));
 }
 
 export function markRepairCompleted(
   vin: string,
   campaignNumber: string,
   note = '',
-): RecallWatch | null {
-  const watch = getRecallWatch(vin);
-  if (!watch) return null;
+): RecallWatchWriteOutcome {
   const entry: CompletedRepair = {
     campaignNumber,
     completedAt: new Date().toISOString(),
     note: note.trim() || undefined,
   };
-  const next = {
+  return updateWatch(vin, watch => ({
     ...watch,
     completedRepairs: [
       ...watch.completedRepairs.filter(item => item.campaignNumber !== campaignNumber),
       entry,
     ],
-  };
-  write(read().map(item => (item.vin === vin ? next : item)));
-  return next;
+  }));
 }
 
-export function unmarkRepairCompleted(vin: string, campaignNumber: string): RecallWatch | null {
-  const watch = getRecallWatch(vin);
-  if (!watch) return null;
-  const next = {
+export function unmarkRepairCompleted(
+  vin: string,
+  campaignNumber: string,
+): RecallWatchWriteOutcome {
+  return updateWatch(vin, watch => ({
     ...watch,
     completedRepairs: watch.completedRepairs.filter(
       item => item.campaignNumber !== campaignNumber,
     ),
-  };
-  write(read().map(item => (item.vin === vin ? next : item)));
-  return next;
+  }));
 }
 
 export function recallWatchChangedEvent(): string {

@@ -113,9 +113,9 @@ export default function GarageBackupPanel() {
         <span className="badge badge-ice">This device only</span>
       </div>
       <p className={styles.muted}>
-        A backup is a JSON file with every saved vehicle, its name, notes, and save date. Restoring
-        replaces the garage in this browser with the file&apos;s contents, so the list comes back
-        exactly as it was when you downloaded it.
+        A backup is a JSON file with every saved vehicle, its name, notes, AU/stock number, plate,
+        and save date. Restoring replaces the garage in this browser with the file&apos;s contents,
+        so the list comes back exactly as it was when you downloaded it.
       </p>
 
       <div className={styles.fieldGrid} style={{ marginTop: 'var(--space-4)' }}>
@@ -214,8 +214,9 @@ export default function GarageBackupPanel() {
         </div>
       )}
       <p className={styles.panelMeta} style={{ marginTop: 'var(--space-3)' }}>
-        The file is created and read in this browser; nothing is uploaded. It contains VINs and any
-        notes you have written, so store it like a document about your vehicles.
+        The file is created and read in this browser; nothing is uploaded. It contains VINs, fleet
+        numbers, plates, and any notes you have written, so store it like a document about your
+        vehicles.
       </p>
     </section>
   );

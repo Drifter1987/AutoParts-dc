@@ -99,8 +99,10 @@ export default function SafetyIntelligencePanel({
           <p className={styles.metricLabel}>
             {data?.complaintsStatus === 'unavailable'
               ? 'NHTSA unavailable'
-              : data?.complaintsStatus === 'not-configured'
-                ? 'Model details incomplete'
+              : data?.complaintsStatus === 'not-applicable'
+                ? 'US-market data only'
+                : data?.complaintsStatus === 'not-configured'
+                  ? 'Model details incomplete'
                 : data?.complaintsCheckedAt
                   ? `Checked ${new Date(data.complaintsCheckedAt).toLocaleString()}`
                   : 'Checking NHTSA'}
@@ -133,9 +135,11 @@ export default function SafetyIntelligencePanel({
               <p className={styles.muted} style={{ marginTop: 'var(--space-3)' }}>
                 {data.complaintsStatus === 'unavailable'
                   ? 'The complaints feed is unavailable right now.'
-                  : data.complaintsStatus === 'not-configured'
-                    ? 'Add a model year, make, and model to look up complaints.'
-                    : 'No complaints returned for this model year.'}
+                  : data.complaintsStatus === 'not-applicable'
+                    ? 'NHTSA complaints cover the US market; this European VIN was not matched by model.'
+                    : data.complaintsStatus === 'not-configured'
+                      ? 'Add a model year, make, and model to look up complaints.'
+                      : 'No complaints returned for this model year.'}
               </p>
             )
           )}
@@ -153,8 +157,10 @@ export default function SafetyIntelligencePanel({
           <p className={styles.metricLabel}>
             {data?.investigationsStatus === 'unavailable'
               ? 'Investigation snapshot unavailable'
-              : data?.investigationsStatus === 'not-configured'
-                ? 'Model details incomplete'
+              : data?.investigationsStatus === 'not-applicable'
+                ? 'US-market data only'
+                : data?.investigationsStatus === 'not-configured'
+                  ? 'Model details incomplete'
                 : data?.investigationsUpdatedAt
                   ? `Model-year snapshot · ${formatDate(data.investigationsUpdatedAt)}`
                   : 'Checking NHTSA snapshot'}
@@ -203,9 +209,11 @@ export default function SafetyIntelligencePanel({
               <p className={styles.muted} style={{ marginTop: 'var(--space-3)' }}>
                 {data.investigationsStatus === 'unavailable'
                   ? 'The NHTSA investigation snapshot could not be loaded.'
-                  : data.investigationsStatus === 'not-configured'
-                    ? 'Add a model year, make, and model to look up investigations.'
-                    : 'No NHTSA investigations returned for this model year in the snapshot.'}
+                  : data.investigationsStatus === 'not-applicable'
+                    ? 'NHTSA investigations cover the US market; this European VIN was not matched by model.'
+                    : data.investigationsStatus === 'not-configured'
+                      ? 'Add a model year, make, and model to look up investigations.'
+                      : 'No NHTSA investigations returned for this model year in the snapshot.'}
               </p>
             )
           )}

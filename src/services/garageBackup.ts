@@ -60,6 +60,8 @@ function normalizeVehicle(value: unknown): GarageVehicle | null {
     engine: nullableText(source.engine, 160),
     name: nullableText(source.name, 80),
     notes: text(source.notes, GARAGE_NOTES_MAX_LENGTH),
+    stockNumber: nullableText(source.stockNumber, 40),
+    plate: nullableText(source.plate, 20),
     savedAt,
   };
 }

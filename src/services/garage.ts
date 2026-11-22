@@ -4,7 +4,7 @@ const STORAGE_KEY = 'autoparts.garage.v1';
 const CHANGE_EVENT = 'autoparts:garage-changed';
 
 /** Mirror of the storage cap applied by write(). */
-export const GARAGE_MAX_VEHICLES = 12;
+export const GARAGE_MAX_VEHICLES = 20;
 
 /** Kept in step with the backup format so a restore round-trips notes intact. */
 export const GARAGE_NOTES_MAX_LENGTH = 4000;
@@ -80,57 +80,73 @@ export function isVehicleSaved(vin: string): boolean {
   return read().some(vehicle => vehicle.vin === vin);
 }
 
+/**
+ * Apply a change to the freshest stored garage. localStorage has no
+ * transaction API, so the read has to be part of the same synchronous
+ * read-modify-write as the write: a mutation based on a snapshot taken earlier
+ * can overwrite another tab's rename, notes, or newly saved vehicle.
+ */
+function mutateGarage(change: (vehicles: GarageVehicle[]) => GarageVehicle[]): boolean {
+  return write(change(read()));
+}
+
 export function saveVehicle(result: VINDecodeResult): boolean {
-  const existing = read().find(vehicle => vehicle.vin === result.vin);
-  const vehicle: GarageVehicle = {
-    vin: result.vin,
-    year: result.year || '',
-    make: result.make || '',
-    model: result.model || '',
-    trim: result.trim,
-    engine: result.engine,
-    name: existing?.name ?? null,
-    notes: existing?.notes ?? '',
-    savedAt: new Date().toISOString(),
-  };
-  return write([vehicle, ...read().filter(item => item.vin !== result.vin)]);
+  return mutateGarage(vehicles => {
+    const existing = vehicles.find(vehicle => vehicle.vin === result.vin);
+    const vehicle: GarageVehicle = {
+      vin: result.vin,
+      year: result.year || '',
+      make: result.make || '',
+      model: result.model || '',
+      trim: result.trim,
+      engine: result.engine,
+      name: existing?.name ?? null,
+      notes: existing?.notes ?? '',
+      stockNumber: existing?.stockNumber ?? null,
+      plate: existing?.plate ?? null,
+      savedAt: new Date().toISOString(),
+    };
+    return [vehicle, ...vehicles.filter(item => item.vin !== result.vin)];
+  });
 }
 
 /** Returns false when the browser refuses the write, so the caller can say so. */
 export function renameGarageVehicle(vin: string, name: string): boolean {
   const clean = name.replace(/\s+/g, ' ').trim().slice(0, 80);
-  return write(
-    read().map(vehicle =>
-      vehicle.vin === vin ? { ...vehicle, name: clean || null } : vehicle,
-    ),
+  return mutateGarage(vehicles =>
+    vehicles.map(vehicle => (vehicle.vin === vin ? { ...vehicle, name: clean || null } : vehicle)),
   );
 }
 
 /** Returns false when the browser refuses the write, so the caller can say so. */
 export function updateGarageVehicleNotes(vin: string, notes: string): boolean {
   const clean = notes.slice(0, GARAGE_NOTES_MAX_LENGTH);
-  return write(read().map(vehicle => (vehicle.vin === vin ? { ...vehicle, notes: clean } : vehicle)));
+  return mutateGarage(vehicles =>
+    vehicles.map(vehicle => (vehicle.vin === vin ? { ...vehicle, notes: clean } : vehicle)),
+  );
 }
 
 export function removeVehicle(vin: string): boolean {
-  return write(read().filter(vehicle => vehicle.vin !== vin));
+  return mutateGarage(vehicles => vehicles.filter(vehicle => vehicle.vin !== vin));
 }
 
 /** Merge a transfer bundle without duplicating VINs or losing the newest save. */
 export function mergeGarageVehicles(vehicles: GarageVehicle[]): number {
-  const existing = new Map(read().map(vehicle => [vehicle.vin, vehicle]));
   let imported = 0;
-  for (const vehicle of vehicles) {
-    const current = existing.get(vehicle.vin);
-    if (!current) {
-      existing.set(vehicle.vin, vehicle);
-      imported += 1;
-    } else if (vehicle.savedAt > current.savedAt) {
-      existing.set(vehicle.vin, vehicle);
-      imported += 1;
+  mutateGarage(current => {
+    const existing = new Map(current.map(vehicle => [vehicle.vin, vehicle]));
+    for (const vehicle of vehicles) {
+      const stored = existing.get(vehicle.vin);
+      if (!stored) {
+        existing.set(vehicle.vin, vehicle);
+        imported += 1;
+      } else if (vehicle.savedAt > stored.savedAt) {
+        existing.set(vehicle.vin, vehicle);
+        imported += 1;
+      }
     }
-  }
-  write([...existing.values()].sort((a, b) => b.savedAt.localeCompare(a.savedAt)));
+    return [...existing.values()].sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+  });
   return imported;
 }
 

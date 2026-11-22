@@ -8,6 +8,7 @@
  */
 
 import type { VINDecodeResult, VehicleSpec } from '../types';
+import { inferEuropeanVinModel } from './vinPatterns';
 
 const NHTSA_BASE = 'https://vpic.nhtsa.dot.gov/api/vehicles';
 const TIMEOUT_MS = 15000;
@@ -87,10 +88,17 @@ export async function decodeVin(
   // NHTSA reports problems as a comma-separated ErrorCode list. Only "0" is a
   // clean decode; the rest are advisories (a bad check digit is the usual one),
   // and the vehicle data is still returned. Fail only when there is no vehicle.
-  const make = get(r, 'Make');
-  const model = get(r, 'Model');
+  const nhtsaMake = get(r, 'Make');
+  const nhtsaModel = get(r, 'Model');
   const year = get(r, 'ModelYear');
   const errorText = get(r, 'ErrorText');
+
+  // vPIC returns make and model year for many European Audi VINs but leaves the
+  // model blank. Fill only that gap from Audi's VIN positions 7-8; a model from
+  // NHTSA always wins.
+  const pattern = !nhtsaModel && year ? inferEuropeanVinModel(clean) : null;
+  const make = nhtsaMake ?? pattern?.make ?? null;
+  const model = nhtsaModel ?? pattern?.model ?? null;
 
   if (!make && !model && !year) {
     throw new Error('NHTSA could not decode this VIN. Check the 17 characters and try again.');
@@ -131,6 +139,9 @@ export async function decodeVin(
     vin: clean,
     make,
     model,
+    model_source: nhtsaModel ? 'nhtsa' : pattern ? 'vin-pattern' : null,
+    model_code: pattern?.code ?? null,
+    model_note: pattern?.note ?? null,
     year,
     trim: get(r, 'Trim'),
     engine: get(r, 'EngineModel'),

@@ -3,7 +3,7 @@
 **Last updated:** 2026-11-22  
 **Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `3d79727` (documentation commit `ea27bd8`), GitHub Pages run `45029726054` succeeded.  
 **Branch/worktree state:** app commit pushed to `main`; this tracker is committed separately. Markdown-only pushes do not redeploy Pages.  
-**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. The Recall Center Remove button now meets a 44 px mobile tap target — measured at **44.0 px** at 390 px wide and **30.8 px** at 1280 px (unchanged desktop) — committed as `3d79727`, documented in `ea27bd8`, and live in Pages run `45029726054`. Full suite on 2026-11-22: **109 passed** in 1.1 min (includes the Recall Watch sync, the Remove-button tap-target regression, the expanded garage test, and the local route-focus spec).
+**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. The Recall Center Remove button now meets a 44 px mobile tap target — measured at **44.0 px** at 390 px wide and **30.8 px** at 1280 px (unchanged desktop) — committed as `3d79727`, documented in `ea27bd8`, and live in Pages run `45029726054`. Full suite on 2026-11-22: **109 passed** in 1.1 min (includes the Recall Watch sync, the Remove-button tap-target regression, the expanded garage test, and the local route-focus spec). The later Recall Watch write-failure change (uncommitted) adds `reports rejected Recall Watch writes and leaves the watch list intact`; full suite on 2026-11-22: **112 passed** in 1.2 min, with `tsc -b` and ESLint clean. The European Audi VIN fallback (uncommitted) adds two fleet tests; full suite on 2026-11-22: **114 passed** in 1.3 min, with `tsc -b`, ESLint, and the production build clean. The My Garage fleet-sheet import (uncommitted) adds three focused import tests and a 20-vehicle cap; full suite on 2026-11-22: **117 passed** in 1.4 min, with `tsc -b`, ESLint, and the production build clean (entry **253.56 kB / 81.64 kB gzip**). The international VIN state (uncommitted) fixes missing make/model rendering and the false zero-recall message; full suite on 2026-11-22: **118 passed** in 1.4 min, with `tsc -b`, ESLint, and the production build clean (entry **253.56 kB / 81.63 kB gzip**; VIN page chunk **74.87 kB / 22.44 kB gzip**).
 
 This file is the continuity record for the AutoParts project. Read it before changing behavior, accessibility, data claims, or the static-host pipeline.
 
@@ -89,8 +89,10 @@ tests/
 ## 4. Completed capability map
 
 - VIN decode with check-digit advisories, cached fallback, URL-shareable reports, vehicle specs.
-- Local My Garage, watchlist, recall rechecks, recall action center, fleet bulk checker and CSV export.
+- International VINs with an incomplete market identity show an explicit “Model data not available for this market” state; model-year recall lookup is skipped instead of being reported as zero campaigns.
+- Local My Garage with fleet-sheet import, watchlist, recall rechecks, recall action center, fleet bulk checker and CSV export.
 - Recall Watch and the watchlist are the same local record (`autoparts.recall-watch.v1`); adding or removing a watch in one tab updates the list and any VIN-page watch button in other open tabs through the browser `storage` event. Covered by `syncs Recall Watch additions and removals across tabs`.
+- **Recall Watch write-failure handling:** adding a watch, removing one, changing its alert opt-in, marking a campaign reviewed, and marking or undoing a repair all report a refused write. A browser-refused write shows “Could not update Recall Watch. Browser storage is unavailable or full.” in a `role="alert"` and leaves the stored list untouched. A save past the 24-watch cap is refused with “Could not update Recall Watch. Remove a vehicle first; the watch list holds up to 24.” instead of silently dropping the oldest watch. Covered by `reports rejected Recall Watch writes and leaves the watch list intact`.
 - Real NHTSA recalls/complaints/investigations, model-level safety intelligence, fitment verification requests.
 - VIN camera scanner: live frame quality feedback, auto-read gating, rear/front switch, torch recovery, permission/track-end recovery, Code 39 support, photo upload, OCR review/correction, retake, cancellation.
 - Local OCR confidence/candidate handling; ordinary prose no longer creates false VIN matches.
@@ -99,6 +101,31 @@ tests/
 - Route metadata, canonical/OG/Twitter/JSON-LD, sitemap, prerender, offline shell.
 - Accessibility: muted text contrast fix, named NHTSA recall links, focusable/labeled VIN and stats strips, keyboard recall toggles, axe gate across core routes, skip link.
 - Performance: route-level lazy loading with the shell and a status fallback preserved.
+
+### European Audi VIN fallback (2026-11-22, uncommitted)
+
+NHTSA vPIC returns Audi make and model year for the European fleet VINs but leaves the model blank. `src/services/vinPatterns.ts` fills only that gap from VIN positions 7–8:
+
+- **GY → A3/S3/RS 3**, **FJ → Q3**, **FZ → Q4 e-tron** come from Audi's 2027 VIN breakdown sheet filed with NHTSA (21 Oct 2026, position 7–8 table).
+- **HC → A2 e-tron** comes from Audi's European HC series (ADAC model catalogue). HC is not in NHTSA's US sheet, so the UI calls it unverified.
+- The fallback applies only to 17-character `WAU`/`WUA` VINs with the `ZZZ` European filler and only when vPIC returned a model year but no model. A model from NHTSA always wins; an unknown code stays blank.
+- `VINDecodeResult` carries optional `model_source`, `model_code`, and `model_note`. `VehicleCard` shows a “Model inferred from VIN positions 7–8 (code)” note instead of presenting the model as vPIC output.
+- A pattern-inferred model is not a US-market identity. `getRecallsForVehicle` and `getSafetyIntelligence` skip their NHTSA model-year queries for it; the VIN page explains that the US lookup was skipped, and the fleet table shows a skip note instead of “None returned.”
+- The 16-character fleet VIN `WAUZZZGYXA000129` is not padded or guessed: the scanner keeps Decode disabled at 16/17 characters.
+
+Two fleet rows labelled `E3 CUV` use the `HC` code; because no documented Audi E3 model exists, they decode as the HC series (A2 e-tron) and the note asks for verification against the vehicle.
+
+**Tests:** `tests/fleet-vins.ts` holds the 15 unique fleet VINs and their expected models; `tests/vin-european.spec.ts` decodes every 17-character VIN (14) and asserts the inferred-model note plus the US recall skip, then checks the 16-character VIN is refused.
+
+### International VIN market-data state (2026-11-22, uncommitted)
+
+vPIC can return a model year with no make/model, or a make with no model. The international check found exactly that for Renault `VF1RFB00X12345678` (2001, no make/model), which previously rendered `2001 null null` and then treated the empty recall result as “No recall campaigns returned.”
+
+- `src/components/ui/VehicleCard.tsx` filters identity fields before joining and uses `hasFullVehicleIdentity`. When the year, make, or model is missing, the card shows **Model data not available for this market** in a `role="status"` note, and the summary strip reads e.g. `2001 · Model data not available for this market` instead of `2001 null null`. No trim is shown without a complete model identity.
+- `src/components/ui/RecallsPanel.tsx` no longer calls the model-year recall lookup when that identity is incomplete. It shows the same explicit warning (“NHTSA's public recall API needs a model year, make, and model… cannot tell whether any campaigns apply”) and keeps the VIN-specific NHTSA check link. It does **not** render “No recall campaigns returned” for a lookup that never ran.
+- The inferred Audi path is unchanged: a known VIN code still shows the inferred model and “US-market recall lookup skipped.” An Audi with no model also falls into the explicit market-data state instead of a null heading.
+
+**Tests:** the existing Audi fleet loop now also asserts that the false zero-recall message never appears. The new Renault test uses the real cached VIN `VF1RFB00X12345678`, asserts the `2001` heading and explicit card/recall states, and confirms neither `null null` nor “No recall campaigns returned” is present. `tests/nhtsa-stubs.ts` now has the Renault fixture.
 
 ### My Garage local workspace (2026-11-22)
 
@@ -110,11 +137,15 @@ Shipped in `325ce5e` (names, notes, backup) and hardened in `a4e4331` (restore-s
 - **Save-failure handling:** every garage write reports when the browser refuses it. Rename, notes, save-to-garage, and remove show the shared message "Could not update My Garage. Browser storage is unavailable or full." in a `role="alert"`, leave the stored state untouched, and skip the success state (no "Notes saved.", no "Saved to My Garage", no removed card).
 - **Restore-safe drafts:** a mounted card follows the stored notes, so a backup restore or transfer import that changes a vehicle's notes updates the field instead of leaving a stale draft that could overwrite the restore on blur.
 - **Cross-tab sync:** `src/services/garage.ts` bridges the browser `storage` event for `autoparts.garage.v1` to the existing in-page change event. A rename, notes save, remove, or backup restore in one tab refreshes every other open tab without a reload; the writing tab still updates from its own in-page event.
-- **Backup and restore:** `src/services/garageBackup.ts` exports every saved vehicle (name, notes, savedAt) to a versioned JSON file and restores it by **replacing** the garage, not merging. `src/components/ui/GarageBackupPanel.tsx` previews the file's date and vehicle count before the destructive restore. Import normalizes each vehicle, rejects invalid or duplicate VINs, caps at 12 vehicles, and reports skipped entries.
+- **Backup and restore:** `src/services/garageBackup.ts` exports every saved vehicle (name, notes, AU/stock number, plate, savedAt) to a versioned JSON file and restores it by **replacing** the garage, not merging. `src/components/ui/GarageBackupPanel.tsx` previews the file's date and vehicle count before the destructive restore. Import normalizes each vehicle, rejects invalid or duplicate VINs, caps at 20 vehicles, and reports skipped entries.
+- **Fleet-sheet import:** `src/services/garageFleetImport.ts` parses a pasted CSV, TSV, semicolon list, or markdown pipe table with VIN, Name, AU/Stock, and Plate columns (optional Notes). A VIN must match `^[A-HJ-NPR-Z0-9]{17}$`; invalid VINs and repeated VINs in the same sheet are listed with line numbers and skipped. A VIN already saved is matched, not added twice. A row whose AU/stock matches a saved vehicle with an invalid VIN repairs that VIN — the original 16-character A3 becomes `WAUZZZGYXVA000129` — while keeping its name and notes. Existing non-empty names and notes always win, and saved AU/stock/plate values are kept; the sheet fills blanks and supplies fleet identifiers for new vehicles. This also keeps the S3's `AU380170257` / `IN-S3680` when the sheet's earlier Q3 row repeats the same VIN. New VINs are decoded through the same NHTSA path, three at a time, then the whole merge writes once. `src/components/ui/GarageFleetImportPanel.tsx` previews new/matched/skipped/overflow counts; `GARAGE_MAX_VEHICLES` is now **20**, so the 15 Audis fit with headroom and their names and notes survive. Covered by `tests/garage-fleet-import.spec.ts`.
 - **Transfer code unchanged:** the older base64 transfer code in `garageTransfer.ts` still merges and keeps the newest save per VIN; it is not a backup/restore path.
 
-**Tests added or extended (all in `tests/smoke.spec.ts`):**
+**Tests added or extended (garage tests in `tests/smoke.spec.ts` unless noted):**
 
+- `imports a CSV, keeps saved names and notes, and skips duplicate or invalid VINs` (`tests/garage-fleet-import.spec.ts`) — seeds two named Audis with notes, imports two matching VINs plus one new Q3, a duplicate Q3, and a 16-character A3; asserts the Q3 appears once, both saved names/notes and AU/plate survive, and the two bad rows are reported and skipped.
+- `repairs a saved 16-character VIN from the AU/stock match and keeps its name and notes` (`tests/garage-fleet-import.spec.ts`) — pastes a markdown pipe table for the A3, corrects the saved VIN to `WAUZZZGYXVA000129`, and keeps one card with its original name/notes and AU/plate.
+- `keeps the saved S3 fleet identifiers when the sheet repeats its VIN on a Q3 row` (`tests/garage-fleet-import.spec.ts`) — the earlier Q3 row is the one kept by the duplicate rule, but the saved S3's `AU380170257` / `IN-S3680`, name, and notes remain unchanged.
 - `renames a saved vehicle and keeps free notes` — rename commits, focus returns to the trigger, and notes persist across reload.
 - `refreshes a mounted garage card when its stored notes change` — an external restore that changes stored notes updates the field rather than leaving the old text behind.
 - `reports rejected garage writes and recovers when storage works` — stubs `localStorage.setItem` to reject garage writes for rename, notes, remove, and save-to-garage; asserts each failure alert and that the failed action leaves its state unchanged (form open, notes not marked saved, card kept, button still "Save to My Garage"), then restores storage and confirms each success state.
@@ -284,12 +315,95 @@ The rule is `@media (width<=640px) { .watchRemove { min-width: 44px; min-height:
 
 App commit `3d79727`, documentation commit `ea27bd8`, deployed as part of Pages run `45029726054` (build, deploy, and deployed Pages smoke all succeeded).
 
+### 2026-11-22 — European Audi VIN fallback
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `decodes every 17-character fleet VIN with an inferred model` (new) | Pass: all 14 decodable VINs show their expected model, the VIN-pattern note, and the US recall skip |
+| `rejects the 16-character fleet VIN instead of inventing a model` (new) | Pass: 16/17 characters, Decode disabled, no model claimed |
+| Focused VIN decoder + European fallback group | **10 passed** in 24.2 s |
+| `npm run build` | Pass; entry **253.60 kB / 81.66 kB gzip** |
+| Full Playwright suite | **114 passed** in 1.3 min |
+
+Changes are uncommitted.
+
+### 2026-11-22 — Fleet-sheet import
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `imports a CSV, keeps saved names and notes, and skips duplicate or invalid VINs` (new) | Pass: 2 matched, 1 new, 2 skipped; Q3 appears once, saved names/notes and AU/plate survive |
+| `repairs a saved 16-character VIN from the AU/stock match and keeps its name and notes` (new) | Pass: A3 VIN corrected to 17 characters; one card, original name/notes and AU/plate kept |
+| `keeps the saved S3 fleet identifiers when the sheet repeats its VIN on a Q3 row` (new) | Pass: saved S3 name/notes and `AU380170257` / `IN-S3680` kept; the Q3 AU/plate did not overwrite them |
+| Focused fleet-import group | **3 passed** in 7.7 s |
+| `npm run build` | Pass; entry **253.56 kB / 81.64 kB gzip**; GaragePage chunk **31.44 kB / 9.59 kB gzip** |
+| Full Playwright suite | **117 passed** in 1.4 min |
+
+Changes are uncommitted.
+
+### 2026-11-22 — International VIN decode states
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `decodes every 17-character fleet VIN with an inferred model` (extended) | Pass: all 14 Audi VINs keep their inferred model and US recall skip; “No recall campaigns returned” is absent |
+| `shows explicit market-data states for the Renault VIN without a make or model` (new) | Pass: `2001` heading, `2001 · Model data not available for this market`, explicit recall warning, no `null null`, no false zero-campaign state |
+| Focused international VIN group | **3 passed** in 16.6 s |
+| Live local check (`/vin?vin=VF1RFB00X12345678`) | Pass: `2001`, explicit card and recall state, no `null null`, no “No recall campaigns returned” |
+| `npm run build` | Pass; entry **253.56 kB / 81.63 kB gzip**; VIN page chunk **74.87 kB / 22.44 kB gzip** |
+| Full Playwright suite | **118 passed** in 1.4 min |
+
+Changes are uncommitted.
+
+### 2026-11-22 — Recall Watch write-failure reporting
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `reports rejected Recall Watch writes and leaves the watch list intact` (new) | Pass: a blocked add keeps the button actionable and shows the alert; a blocked Remove keeps the card and the stored watch; a 25th watch is refused instead of dropping the oldest |
+| Full Playwright suite | **112 passed** in 1.2 min |
+
+`write()` in `src/services/recallWatch.ts` now returns `'saved' | 'rejected' | 'full'` instead of swallowing the result, and refuses a save past `RECALL_WATCH_MAX_WATCHES` rather than truncating the list. `updateWatch` reports `'missing'` for a watch another tab removed. `RecallWatchButton` and `RecallCenterPage` surface `recallWatchWriteError(outcome)` in a `role="alert"` and skip their success states. Background rechecks are unchanged. Changes are uncommitted.
+
+### 2026-11-22 — Live My Garage fleet transfer
+
+The 15 Audi fleet vehicles were copied from the local dev preview into the deployed
+My Garage at `https://len-golani.github.io/AutoParts-fb/garage/`. The deployed app is
+still commit `3d79727`, whose `write()` slices the garage to 12 and whose backup
+restore reports extra records as dropped. Because a normal restore would keep only
+12, the records were seeded directly into the deployed origin's
+`autoparts.garage.v1` localStorage from a validated backup, without changing names
+or notes.
+
+| Item | Result |
+|---|---|
+| Backup file | `autoparts-garage-backup-15-audis-2026-11-22.json` — 15 vehicles, 15 names, 15 notes |
+| A3 repair | `vin` corrected from 16-character `WAUZZZGYXA000129` to `WAUZZZGYXVA000129`; name and note unchanged, and the note still records the original 16-character source |
+| Validation | 15 records; no invalid or duplicate VINs; every name and note non-empty and unchanged from the local backup; SHA-256 of the vehicles array `bf1ffca665b800923861dbc71b74deca0124f5eff31d1860a4ad74becfe62dc9` |
+| Deployed page check | 15 cards rendered; all 15 names and all 15 note values present in the page; A3 record uses the corrected 17-character VIN |
+
+**Live-build limitation:** the deployed build is not the workspace's 20-cap build.
+The 15 records are currently readable, but the next garage write in that browser
+(rename, Save notes, Remove, backup restore, or transfer import) will truncate the
+stored list to 12. A backup restore on the live build would also keep only 12 and
+report 3 dropped. The workspace's 20-vehicle cap and fleet import remain
+uncommitted and undeployed. Re-restore the backup after deploying that build to make
+the 15 write-durable. No commit, push, or deploy was performed.
+
 ---
 
 ## 8. Known limitations and open risks
 
 - **Live Pages is a static deployment.** There is no server, rollback button, or server-side rate limiting; recovery means redeploying a previous artifact.
+- **Live Pages still uses the 12-vehicle garage cap.** The workspace's 20-vehicle cap and fleet import are uncommitted and undeployed. The 15 fleet vehicles seeded on 2026-11-22 are readable on the live origin, but the next garage write or backup restore there keeps only 12; redeploy the 20-cap build before relying on the live copy.
 - **Historical catalogue coverage** before 1984 is not available from the EPA source used for the 2026 manufacturer catalogue.
+- **European VIN fallback is a model-code table, not a licensed decoder.** It covers only `WAU`/`WUA` Audi VINs with `GY`, `FJ`, `FZ`, or `HC`; other European makes and model codes still return no model. `HC` is not in NHTSA's US Audi sheet, and the fleet's `E3 CUV` labels do not match a documented Audi model, so those rows decode as A2 e-tron with a verification note. VINs with no make/model (e.g. Renault `VF1RFB00X12345678`) are not guessed; they show the explicit market-data state and skip the model-year recall query.
+- **No European recall source.** For pattern-inferred European models, the app deliberately skips NHTSA's US-market recall and safety queries rather than presenting US campaigns as local ones.
 - **Representative Civic data:** 36 parts are for product development, not licensed OEM fitment. Keep the provenance disclaimer visible.
 - **Automated accessibility only.** Axe catches a subset; run NVDA/VoiceOver and keyboard-only smoke tests before claiming full WCAG conformance.
 - **No field performance data.** Bundle sizes are build measurements, not LCP/INP/CLS.
@@ -297,7 +411,7 @@ App commit `3d79727`, documentation commit `ea27bd8`, deployed as part of Pages 
 - **Browser cameras and OCR** require real device testing; Playwright uses mocked media streams.
 - **A stale lazy chunk after a deploy** is handled by the existing error boundary reload, but has not been chaos-tested against a live Pages rollout.
 - **My Garage and Recall Watch are browser-local.** Vehicles, names, notes, and watch records live in `localStorage`; there is no account or cloud sync, and clearing site data removes them. Cross-tab updates depend on the browser `storage` event, which fires in other same-origin tabs but not in the tab that wrote.
-- **Garage caps:** 12 vehicles, 80-character names, 4,000-character notes. Extra vehicles are not stored; longer notes are truncated at the same limit the backup importer uses.
+- **Garage caps:** 20 vehicles, 80-character names, 4,000-character notes, 40-character AU/stock numbers, 20-character plates. Extra vehicles are not stored; longer notes and fleet fields are truncated at the same limits the backup importer uses.
 - **Backup files are user-managed.** They contain VINs and free-text notes and are never uploaded. A backup covers My Garage only — not Recall Watch, fitment requests, or demand captures.
 - **Restore is destructive by design.** Restoring a backup replaces the whole garage; the panel previews the file first, but there is no undo beyond keeping another backup.
 
@@ -319,13 +433,17 @@ App commit `3d79727`, documentation commit `ea27bd8`, deployed as part of Pages 
 - Do not commit, push, or deploy further without explicit authorization.
 - Dev server may be running at `http://127.0.0.1:5173`; reuse it rather than starting a duplicate.
 - When checking live behavior through the preview panel, first confirm which tab it reports as active (`preview_status`). The panel delivers mouse and keyboard input only to that visible tab: a background tab with `document.visibilityState === "hidden"` receives no `pointerdown`/`mousedown`/`click` or `keydown` at all, so a button there appears dead while its handler is fine. In a visible tab the same control delivers a full trusted event chain and works. Investigating the deployed Recall Center Remove button confirmed this — the click failure was panel input routing, not the page — so activate or reopen the tab before calling a live control broken.
-- Test fixtures: 2020 Civic VIN `2HGFC2F59LH500001`; other examples `1HGCM82633A004352`, `4T1BF3EK8AU561547`.
+- Test fixtures: 2020 Civic VIN `2HGFC2F59LH500001`; other examples `1HGCM82633A004352`, `4T1BF3EK8AU561547`; Renault `VF1RFB00X12345678`; Audi fleet VINs in `tests/fleet-vins.ts`.
+- When changing VIN identity rendering: use the complete year/make/model check before showing a model identity. If any part is missing, show **Model data not available for this market**, do not render nulls, and do not treat a skipped recall lookup as zero campaigns. Run `tests/vin-european.spec.ts`.
 - When changing routes: update `src/App.tsx`, ensure lazy imports remain compatible with `scripts/prerender.mjs`, and rerun build + prerender.
+- When changing VIN decoding: keep `src/services/vinPatterns.ts` additive-only — it must never override a model NHTSA returned, and it must leave unknown codes blank. Keep `model_source` on the result so the UI, recalls, and safety services can tell an inferred model from a vPIC model. Run `tests/vin-european.spec.ts`.
 - When changing the camera/photo path: preserve local-only processing and update both the disclosure and upload-failure tests.
 - When changing colors, focus styles, labels, or interactive controls: run `tests/accessibility.spec.ts` and the relevant responsive test; never suppress an Axe rule to get green.
 - When changing catalogue data: run `npm run validate:parts` and keep `docs/parts-provenance.md` truthful.
 - When changing My Garage: keep every write in `src/services/garage.ts` returning a boolean and surface failures with `GARAGE_WRITE_FAILED_MESSAGE`; run the garage Playwright group (`--grep "My Garage|saved vehicle|garage card|rejected garage|another open tab"`).
+- When changing the fleet-sheet import: keep VIN-first matching, never add a second card for an existing VIN, and only repair a saved VIN when its AU/stock matches and the saved VIN is invalid. Preserve non-empty saved names and notes. Run `tests/garage-fleet-import.spec.ts`.
 - When changing notes or backup: keep `GARAGE_NOTES_MAX_LENGTH` shared by the service, textarea, and backup importer, and preserve replace-on-restore semantics — a backup import must not merge.
 - When changing garage updates: keep the `storage` bridge in `src/services/garage.ts` and have consumers listen to `garageChangedEvent()`; the two-tab regression test is `syncs a rename and notes save to another open tab`.
 - When changing Recall Watch updates: keep the `storage` bridge in `src/services/recallWatch.ts` and have consumers listen to `recallWatchChangedEvent()`; the two-tab regression test is `syncs Recall Watch additions and removals across tabs`.
+- When changing Recall Watch writes: keep `write()` returning a `RecallWatchWriteOutcome`, surface every user-initiated failure through `recallWatchWriteError(outcome)` in a `role="alert"`, and never truncate past `RECALL_WATCH_MAX_WATCHES`; the regression test is `reports rejected Recall Watch writes and leaves the watch list intact`.
 - When changing the Recall Center Remove button: keep the mobile-only 44 px rule on `.watchRemove` and the regression test `keeps the Remove button tappable on mobile without enlarging it on desktop`; desktop must stay at the ~30.8 px ghost-button height.

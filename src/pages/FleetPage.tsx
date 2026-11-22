@@ -232,7 +232,9 @@ export default function FleetPage() {
                         )}
                       </td>
                       <td>
-                        {row.recalls?.length ? (
+                        {row.recallNote ? (
+                          <span className={styles.listMeta}>{row.recallNote}</span>
+                        ) : row.recalls?.length ? (
                           <span className={styles.campaignList}>
                             <span>{row.recalls.length} campaign{row.recalls.length === 1 ? '' : 's'}</span>
                             <span className={styles.listMeta}>{row.recalls.map(item => item.campaignNumber).join(', ')}</span>

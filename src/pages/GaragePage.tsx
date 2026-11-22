@@ -15,6 +15,7 @@ import {
   updateGarageVehicleNotes,
 } from '../services/garage';
 import GarageBackupPanel from '../components/ui/GarageBackupPanel';
+import GarageFleetImportPanel from '../components/ui/GarageFleetImportPanel';
 import GarageTransferPanel from '../components/ui/GarageTransferPanel';
 import type { GarageVehicle } from '../types';
 import styles from '../styles/parts.module.css';
@@ -115,6 +116,16 @@ function GarageVehicleCard({
         </button>
       </div>
       <p className={styles.garageVin}>{vehicle.vin}</p>
+      {(vehicle.stockNumber || vehicle.plate) && (
+        <p className={styles.partMeta}>
+          {[
+            vehicle.stockNumber ? `AU/stock ${vehicle.stockNumber}` : '',
+            vehicle.plate ? `Plate ${vehicle.plate}` : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      )}
       <p className={styles.partMeta}>
         {[vehicle.year, vehicle.make, vehicle.model, vehicle.trim].filter(Boolean).join(' ')}
         {vehicle.engine ? ` · ${vehicle.engine}` : ''}
@@ -283,8 +294,8 @@ export default function GaragePage() {
             <h1 className={styles.title}>My Garage</h1>
             <p className={styles.subtitle}>
               Vehicles saved here stay in this browser only — no account or server is connected.
-              Reopen a VIN result, start a recall watch, back the list up to a file, or move it to
-              another browser with a transfer code below.
+              Reopen a VIN result, start a recall watch, import a fleet sheet, back the list up to a
+              file, or move it to another browser with a transfer code below.
             </p>
           </div>
           <div className={styles.pageActions}>
@@ -302,8 +313,8 @@ export default function GaragePage() {
             <Bookmark size={34} />
             <h2 className={styles.h2}>No saved vehicles yet</h2>
             <p className={styles.provenance}>
-              Decode a VIN and choose <strong>Save to My Garage</strong>. The next time you need the
-              part, the VIN and vehicle context are already here.
+              Decode a VIN and choose <strong>Save to My Garage</strong>, or import a fleet sheet
+              below. The next time you need the part, the VIN and vehicle context are already here.
             </p>
             <Link to="/vin" className="btn btn-ghost">Decode a VIN</Link>
           </div>
@@ -318,6 +329,10 @@ export default function GaragePage() {
             ))}
           </div>
         )}
+
+        <div style={{ marginTop: 'var(--space-6)' }}>
+          <GarageFleetImportPanel />
+        </div>
 
         <div style={{ marginTop: 'var(--space-6)' }}>
           <GarageBackupPanel />

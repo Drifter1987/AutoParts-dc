@@ -4,6 +4,7 @@ import { BellPlus, BellRing } from 'lucide-react';
 import {
   getRecallWatch,
   recallWatchChangedEvent,
+  recallWatchWriteError,
   watchRecallResult,
 } from '../../services/recallWatch';
 import { trackEvent } from '../../services/telemetry';
@@ -21,9 +22,13 @@ export default function RecallWatchButton({
   reportMode = false,
 }: RecallWatchButtonProps) {
   const [watching, setWatching] = useState(() => Boolean(getRecallWatch(result.vin)));
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const refresh = () => setWatching(Boolean(getRecallWatch(result.vin)));
+    const refresh = () => {
+      setWatching(Boolean(getRecallWatch(result.vin)));
+      setError(null);
+    };
     window.addEventListener(recallWatchChangedEvent(), refresh);
     return () => window.removeEventListener(recallWatchChangedEvent(), refresh);
   }, [result.vin]);
@@ -42,17 +47,39 @@ export default function RecallWatchButton({
   }
 
   return (
-    <button
-      type="button"
-      className={className}
-      data-report-action={reportMode ? '' : undefined}
-      onClick={() => {
-        watchRecallResult(result);
-        setWatching(true);
-        trackEvent('recall_watch_added', { vin: result.vin });
-      }}
-    >
-      <BellPlus size={14} /> Watch recalls
-    </button>
+    <>
+      <button
+        type="button"
+        className={className}
+        data-report-action={reportMode ? '' : undefined}
+        onClick={() => {
+          const { outcome } = watchRecallResult(result);
+          const failure = recallWatchWriteError(outcome);
+          if (failure) {
+            setError(failure);
+            return;
+          }
+          setError(null);
+          setWatching(true);
+          trackEvent('recall_watch_added', { vin: result.vin });
+        }}
+      >
+        <BellPlus size={14} /> Watch recalls
+      </button>
+      {error && (
+        <p
+          role="alert"
+          style={{
+            flexBasis: '100%',
+            margin: 0,
+            color: 'var(--error)',
+            fontSize: '0.8rem',
+            lineHeight: 1.5,
+          }}
+        >
+          {error}
+        </p>
+      )}
+    </>
   );
 }

@@ -38,10 +38,14 @@ export interface RecallVehicle {
   year: string | null;
   make: string | null;
   model: string | null;
+  model_source?: VINDecodeResult['model_source'];
 }
 
 export async function getRecallsForVehicle(vehicle: RecallVehicle): Promise<VehicleRecall[]> {
   if (!vehicle.make || !vehicle.model || !vehicle.year) return [];
+  // A model inferred from a European VIN pattern is not a US-market model
+  // identity; querying NHTSA by that name would return the wrong market's data.
+  if (vehicle.model_source === 'vin-pattern') return [];
 
   const url = new URL(RECALLS_BASE);
   url.searchParams.set('make', vehicle.make);

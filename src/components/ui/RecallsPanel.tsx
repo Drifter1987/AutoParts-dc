@@ -51,8 +51,11 @@ export default function RecallsPanel({ result, reportMode = false }: RecallsPane
   const recalls = state.key === key ? state.recalls : null;
   const checkedAt = state.key === key ? state.checkedAt : null;
   const error = state.key === key ? state.error : false;
+  const inferredModel = result.model_source === 'vin-pattern';
+  const missingModelData = !result.year || !result.make || !result.model;
 
   useEffect(() => {
+    if (inferredModel || missingModelData) return;
     let cancelled = false;
 
     getRecalls(result)
@@ -76,7 +79,7 @@ export default function RecallsPanel({ result, reportMode = false }: RecallsPane
     return () => {
       cancelled = true;
     };
-  }, [result, key]);
+  }, [result, key, inferredModel, missingModelData]);
 
   return (
     <section className={`card ${styles.detailCard}`} style={{ marginTop: 'var(--space-5)' }} aria-labelledby="recalls-title">
@@ -96,18 +99,61 @@ export default function RecallsPanel({ result, reportMode = false }: RecallsPane
       </div>
 
       <p className={styles.recallIntro} style={{ marginBottom: 'var(--space-4)' }}>
-        These campaigns are reported to NHTSA for the {vehicleLabel}. The public API does not
-        return this VIN&apos;s repair status, so use the VIN check above to confirm which recalls
-        are still open for this specific vehicle.
+        {inferredModel ? (
+          <>
+            This European VIN&apos;s model was inferred from its VIN pattern, so no NHTSA
+            model-year recall query was run. NHTSA&apos;s public recall data covers the US market;
+            check Audi&apos;s recall system for this vehicle&apos;s market.
+          </>
+        ) : missingModelData ? (
+          <>
+            NHTSA&apos;s public recall data is organized by model year, make, and model. This VIN
+            did not return enough model data for this market, so AutoParts did not run a
+            model-year recall query.
+          </>
+        ) : (
+          <>
+            These campaigns are reported to NHTSA for the {vehicleLabel}. The public API does not
+            return this VIN&apos;s repair status, so use the VIN check above to confirm which recalls
+            are still open for this specific vehicle.
+          </>
+        )}
       </p>
 
-      {recalls === null && !error && (
+      {inferredModel && (
+        <div className={`${styles.fitmentCard} ${styles.fitmentWarning}`} role="status">
+          <AlertTriangle size={16} />
+          <div>
+            <strong>US-market recall lookup skipped.</strong>
+            <p className={styles.fitmentText}>
+              NHTSA&apos;s public recall API is US-market data. This European VIN was decoded from
+              its VIN pattern, so AutoParts did not run a model-year recall query.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {missingModelData && (
+        <div className={`${styles.fitmentCard} ${styles.fitmentWarning}`} role="status">
+          <AlertTriangle size={16} />
+          <div>
+            <strong>Model data not available for this market.</strong>
+            <p className={styles.fitmentText}>
+              NHTSA&apos;s public recall API needs a model year, make, and model. This VIN decoded
+              without that model-level identity, so AutoParts cannot tell whether any campaigns
+              apply. Use the VIN check above to confirm open recalls for this vehicle.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!inferredModel && !missingModelData && recalls === null && !error && (
         <p className={styles.detailValue} aria-live="polite">
           Checking NHTSA for recall campaigns for this model year…
         </p>
       )}
 
-      {error && (
+      {!inferredModel && !missingModelData && error && (
         <div className={`${styles.fitmentCard} ${styles.fitmentWarning}`} role="status">
           <AlertTriangle size={16} />
           <div>
@@ -119,7 +165,7 @@ export default function RecallsPanel({ result, reportMode = false }: RecallsPane
         </div>
       )}
 
-      {recalls && recalls.length === 0 && (
+      {!inferredModel && !missingModelData && recalls && recalls.length === 0 && (
         <div className={`${styles.fitmentCard} ${styles.fitmentSuccess}`} role="status">
           <ShieldCheck size={16} />
           <div>
@@ -132,7 +178,7 @@ export default function RecallsPanel({ result, reportMode = false }: RecallsPane
         </div>
       )}
 
-      {recalls && recalls.length > 0 && (
+      {!missingModelData && recalls && recalls.length > 0 && (
         <>
           <p className={`${styles.sectionMeta} ${styles.recallCount}`} style={{ marginBottom: 'var(--space-3)' }}>
             {recalls.length} NHTSA campaign{recalls.length === 1 ? '' : 's'} reported for this

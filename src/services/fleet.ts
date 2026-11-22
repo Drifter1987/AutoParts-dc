@@ -34,6 +34,10 @@ export async function checkFleetVins(
           year: decoded.year,
           make: decoded.make,
           model: decoded.model,
+          recallNote:
+            decoded.model_source === 'vin-pattern'
+              ? 'US-market recall lookup skipped — model inferred from the VIN.'
+              : null,
           recalls,
           checkedAt: new Date().toISOString(),
         });

@@ -10,6 +10,12 @@ export interface VINDecodeResult {
   vin: string;
   make: string | null;
   model: string | null;
+  /** Where `model` came from: NHTSA or the local VIN-pattern table. */
+  model_source?: 'nhtsa' | 'vin-pattern' | null;
+  /** Model-code characters at VIN positions 7-8 when the fallback was used. */
+  model_code?: string | null;
+  /** Caveat shown when the model is inferred from the VIN pattern. */
+  model_note?: string | null;
   year: string | null;
   trim: string | null;
   engine: string | null;
@@ -146,6 +152,10 @@ export interface GarageVehicle {
   engine: string | null;
   name?: string | null;
   notes?: string | null;
+  /** Fleet sheet AU/stock number, when imported. */
+  stockNumber?: string | null;
+  /** Fleet sheet license plate, when imported. */
+  plate?: string | null;
   savedAt: string;
 }
 
@@ -307,6 +317,8 @@ export interface FleetRow {
   year?: string | null;
   make?: string | null;
   model?: string | null;
+  /** Set when the model came from the VIN pattern and US recalls were skipped. */
+  recallNote?: string | null;
   recalls?: VehicleRecallLike[];
   error?: string;
   checkedAt?: string;

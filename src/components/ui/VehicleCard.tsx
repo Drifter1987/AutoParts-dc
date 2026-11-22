@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Fuel, Settings, Gauge, MapPin, ChevronDown, ChevronUp, CheckCircle2, FileText } from 'lucide-react';
+import { Car, Fuel, Settings, Gauge, MapPin, ChevronDown, ChevronUp, CheckCircle2, FileText, Info } from 'lucide-react';
 import { findCatalogBrand, findCatalogModel } from '../../services/catalog';
 import {
   findCatalogVehicleForDecode,
@@ -52,8 +52,14 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
     ? result.all_specs.filter(s => s.value)
     : result.all_specs.filter(s => s.value && PRIORITY_SPECS.includes(s.variable));
 
+  const vehicleIdentity = [result.year, result.make, result.model].filter(Boolean).join(' ');
+  const hasFullVehicleIdentity = Boolean(result.year && result.make && result.model);
+  const vehicleSummary = hasFullVehicleIdentity
+    ? vehicleIdentity
+    : [vehicleIdentity, 'Model data not available for this market'].filter(Boolean).join(' · ');
+
   const quickStats = [
-    { icon: <Car size={16} />, label: 'Vehicle', value: `${result.year} ${result.make} ${result.model}` },
+    { icon: <Car size={16} />, label: 'Vehicle', value: vehicleSummary },
     { icon: <Settings size={16} />, label: 'Engine', value: result.engine || result.cylinders ? `${result.cylinders ? result.cylinders + '-cyl' : ''} ${result.displacement_l ? result.displacement_l + 'L' : ''}`.trim() : null },
     { icon: <Fuel size={16} />, label: 'Fuel', value: result.fuel_type },
     { icon: <Gauge size={16} />, label: 'Drive', value: result.drive_type },
@@ -71,8 +77,10 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
           <div>
             <p className="eyebrow">VIN Decoded</p>
             <h2 className={styles.vehicleName}>
-              {result.year} {result.make} {result.model}
-              {result.trim && <span className={styles.trim}> {result.trim}</span>}
+              {vehicleIdentity || 'Vehicle identity unavailable'}
+              {hasFullVehicleIdentity && result.trim && (
+                <span className={styles.trim}> {result.trim}</span>
+              )}
             </h2>
           </div>
         </div>
@@ -81,6 +89,28 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
           <span className={styles.vinValue}>{result.vin}</span>
         </div>
       </div>
+
+      {result.model_source === 'vin-pattern' && result.model_note && (
+        <div className={styles.inferred}>
+          <Info size={15} aria-hidden="true" />
+          <p>
+            <strong>Model inferred from VIN positions 7–8 ({result.model_code}).</strong>{' '}
+            {result.model_note}
+          </p>
+        </div>
+      )}
+
+      {!hasFullVehicleIdentity && (
+        <div className={styles.inferred} role="status">
+          <Info size={15} aria-hidden="true" />
+          <p>
+            <strong>Model data not available for this market.</strong> NHTSA returned this VIN
+            without enough model-year, make, and model detail. Model-level recall and parts
+            lookups need that identity, so use the VIN-specific NHTSA check to confirm this
+            vehicle.
+          </p>
+        </div>
+      )}
 
       {/* Quick stat strip */}
       <div className={styles.statStrip} role="group" aria-label="Vehicle summary" tabIndex={0}>
@@ -137,9 +167,11 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
             <p className={styles.footerText}>
               {catalogVehicle
                 ? `Representative catalog ready for the ${getVehicleLabel(catalogVehicle)}. Verify fitment with your dealer before ordering.`
-                : catalogBrand
+                                  : catalogBrand
                   ? 'This vehicle is in the brand/model preview, but its parts data is not published yet. The live slice covers the 2020 Civic.'
-                  : `${result.make || 'This make'} is not in the parts catalog yet. VIN decoding is still fully live.`}
+                  : !hasFullVehicleIdentity
+                    ? 'Model data is not available for this market, so parts coverage cannot be matched. VIN decoding is still fully live.'
+                    : `${result.make || 'This make'} is not in the parts catalog yet. VIN decoding is still fully live.`}
             </p>
             <div className={styles.footerActions}>
               <SaveVehicleButton

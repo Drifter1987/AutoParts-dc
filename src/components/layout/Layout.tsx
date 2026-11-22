@@ -1,6 +1,6 @@
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Wrench, BookOpen, Cpu, Menu, X, Bookmark, SlidersHorizontal } from 'lucide-react';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { trackEvent } from '../../services/telemetry';
 import RecallWatchdog from '../RecallWatchdog';
 import ScrollEffects from './ScrollEffects';
@@ -16,6 +16,49 @@ export default function Layout() {
   useEffect(() => {
     trackEvent('page_view', { path: location.pathname, search: location.search });
   }, [location.pathname, location.search]);
+
+  const lastPathname = useRef(location.pathname);
+
+  // An SPA route change leaves focus on the clicked link or <body>. Move it to
+  // the new page's heading once that heading renders (lazy routes may show a
+  // loading fallback first). Query-only updates are left alone: a decoded VIN
+  // writes ?vin= while the scanner keeps focus in its input.
+  useEffect(() => {
+    if (lastPathname.current === location.pathname) return;
+    lastPathname.current = location.pathname;
+
+    const main = document.getElementById('main-content');
+    if (!main) return;
+
+    let done = false;
+    let timeout = 0;
+    let observer: MutationObserver | null = null;
+
+    const focusHeading = () => {
+      if (done) return;
+      const heading = main.querySelector<HTMLElement>('h1');
+      if (!heading) return;
+      done = true;
+      observer?.disconnect();
+      window.clearTimeout(timeout);
+      heading.setAttribute('tabindex', '-1');
+      heading.focus();
+    };
+
+    observer = new MutationObserver(focusHeading);
+    observer.observe(main, { childList: true, subtree: true });
+    timeout = window.setTimeout(() => {
+      done = true;
+      observer?.disconnect();
+    }, 5000);
+    focusHeading();
+
+    return () => {
+      done = true;
+      observer?.disconnect();
+      window.clearTimeout(timeout);
+    };
+  }, [location.pathname]);
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault();
