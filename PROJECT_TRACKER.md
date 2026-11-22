@@ -1,9 +1,9 @@
 # AutoParts — Project Tracker
 
 **Last updated:** 2026-11-22  
-**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `3d79727` (documentation commit `ea27bd8`), GitHub Pages run `45029726054` succeeded.  
+**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `ed75f3f`, GitHub Pages run `45060201710` succeeded. The live build holds 20 vehicles.  
 **Branch/worktree state:** app commit pushed to `main`; this tracker is committed separately. Markdown-only pushes do not redeploy Pages.  
-**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. The Recall Center Remove button now meets a 44 px mobile tap target — measured at **44.0 px** at 390 px wide and **30.8 px** at 1280 px (unchanged desktop) — committed as `3d79727`, documented in `ea27bd8`, and live in Pages run `45029726054`. Full suite on 2026-11-22: **109 passed** in 1.1 min (includes the Recall Watch sync, the Remove-button tap-target regression, the expanded garage test, and the local route-focus spec). The later Recall Watch write-failure change (uncommitted) adds `reports rejected Recall Watch writes and leaves the watch list intact`; full suite on 2026-11-22: **112 passed** in 1.2 min, with `tsc -b` and ESLint clean. The European Audi VIN fallback (uncommitted) adds two fleet tests; full suite on 2026-11-22: **114 passed** in 1.3 min, with `tsc -b`, ESLint, and the production build clean. The My Garage fleet-sheet import (uncommitted) adds three focused import tests and a 20-vehicle cap; full suite on 2026-11-22: **117 passed** in 1.4 min, with `tsc -b`, ESLint, and the production build clean (entry **253.56 kB / 81.64 kB gzip**). The international VIN state (uncommitted) fixes missing make/model rendering and the false zero-recall message; full suite on 2026-11-22: **118 passed** in 1.4 min, with `tsc -b`, ESLint, and the production build clean (entry **253.56 kB / 81.63 kB gzip**; VIN page chunk **74.87 kB / 22.44 kB gzip**).
+**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. The Recall Center Remove button now meets a 44 px mobile tap target — measured at **44.0 px** at 390 px wide and **30.8 px** at 1280 px (unchanged desktop) — committed as `3d79727`, documented in `ea27bd8`, and live in Pages run `45029726054`. Full suite on 2026-11-22: **109 passed** in 1.1 min (includes the Recall Watch sync, the Remove-button tap-target regression, the expanded garage test, and the local route-focus spec). The later Recall Watch write-failure change (uncommitted) adds `reports rejected Recall Watch writes and leaves the watch list intact`; full suite on 2026-11-22: **112 passed** in 1.2 min, with `tsc -b` and ESLint clean. The European Audi VIN fallback (uncommitted) adds two fleet tests; full suite on 2026-11-22: **114 passed** in 1.3 min, with `tsc -b`, ESLint, and the production build clean. The My Garage fleet-sheet import (uncommitted) adds three focused import tests and a 20-vehicle cap; full suite on 2026-11-22: **117 passed** in 1.4 min, with `tsc -b`, ESLint, and the production build clean (entry **253.56 kB / 81.64 kB gzip**). The international VIN state fixes missing make/model rendering and the false zero-recall message. All of that work — the 20-vehicle garage, fleet-sheet import, European VIN fallback, international market states, Recall Watch write reporting, and SPA route focus — shipped as app commit `ed75f3f` in Pages run `45060201710`. Full suite before deploying on 2026-11-22: **118 passed** in 1.5 min, with `tsc -b`, ESLint, and the production build clean (entry **253.56 kB / 81.63 kB gzip**; VIN page chunk **74.87 kB / 22.44 kB gzip**).
 
 This file is the continuity record for the AutoParts project. Read it before changing behavior, accessibility, data claims, or the static-host pipeline.
 
@@ -102,7 +102,7 @@ tests/
 - Accessibility: muted text contrast fix, named NHTSA recall links, focusable/labeled VIN and stats strips, keyboard recall toggles, axe gate across core routes, skip link.
 - Performance: route-level lazy loading with the shell and a status fallback preserved.
 
-### European Audi VIN fallback (2026-11-22, uncommitted)
+### European Audi VIN fallback (2026-11-22, deployed in `ed75f3f`)
 
 NHTSA vPIC returns Audi make and model year for the European fleet VINs but leaves the model blank. `src/services/vinPatterns.ts` fills only that gap from VIN positions 7–8:
 
@@ -117,7 +117,7 @@ Two fleet rows labelled `E3 CUV` use the `HC` code; because no documented Audi E
 
 **Tests:** `tests/fleet-vins.ts` holds the 15 unique fleet VINs and their expected models; `tests/vin-european.spec.ts` decodes every 17-character VIN (14) and asserts the inferred-model note plus the US recall skip, then checks the 16-character VIN is refused.
 
-### International VIN market-data state (2026-11-22, uncommitted)
+### International VIN market-data state (2026-11-22, deployed in `ed75f3f`)
 
 vPIC can return a model year with no make/model, or a make with no model. The international check found exactly that for Renault `VF1RFB00X12345678` (2001, no make/model), which previously rendered `2001 null null` and then treated the empty recall result as “No recall campaigns returned.”
 
@@ -359,6 +359,23 @@ Changes are uncommitted.
 
 Changes are uncommitted.
 
+### 2026-11-22 — 20-vehicle build deployed, live fleet restored
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `npm run build` | Pass; entry **253.56 kB / 81.63 kB gzip**; GaragePage chunk **31.44 kB / 9.59 kB gzip** |
+| Full Playwright suite | **118 passed** in 1.5 min |
+| Commit and push | `ed75f3f` to `main` |
+| GitHub Actions “Smoke tests” run `45060201674` | Success |
+| GitHub Actions “Deploy to GitHub Pages” run `45060201710` | Success: build, deploy, and deployed Pages smoke |
+| Deployed bundle | `garage-DP6Ei8WW.js` and `GaragePage-CD7_8Ita.js` contain the 20-vehicle cap; live garage page shows “15 of 20 garage spaces used” |
+| `PLAYWRIGHT_CHANNEL=msedge npm run test:pages` | **2 passed** against the live Pages URL |
+| Live backup restore | Pass: the backup panel previewed `autoparts-garage-backup-15-audis-2026-11-22.json` (15 vehicles) and restored with “Restored 15 saved vehicles. The garage now matches this backup.”; 15 cards, 15 unique VINs, every name and note present, A3 VIN `WAUZZZGYXVA000129` |
+| Live note edit | Pass: editing the first card's notes and blurring saved it (“Notes saved.”) while storage stayed at 15 vehicles with the other 14 names and notes present; the edit survived a reload |
+| Live note revert | Pass: restoring the original text returned the stored vehicles to the backup exactly — canonical SHA-256 of `vin\0name\0notes` rows `4be6747b9d4acd8aa4c88d1c557edeab4ba200bdd859040955304b3871cafa83`, matching the backup file |
+
 ### 2026-11-22 — Recall Watch write-failure reporting
 
 | Check | Result |
@@ -400,7 +417,7 @@ the 15 write-durable. No commit, push, or deploy was performed.
 ## 8. Known limitations and open risks
 
 - **Live Pages is a static deployment.** There is no server, rollback button, or server-side rate limiting; recovery means redeploying a previous artifact.
-- **Live Pages still uses the 12-vehicle garage cap.** The workspace's 20-vehicle cap and fleet import are uncommitted and undeployed. The 15 fleet vehicles seeded on 2026-11-22 are readable on the live origin, but the next garage write or backup restore there keeps only 12; redeploy the 20-cap build before relying on the live copy.
+- **Live Pages now runs the 20-vehicle garage.** Commit `ed75f3f` deployed in Pages run `45060201710`. The live restore of `autoparts-garage-backup-15-audis-2026-11-22.json` kept 15 vehicles, and a save-notes edit kept all 15 vehicles plus the other 14 names and notes. The earlier 12-vehicle build is superseded.
 - **Historical catalogue coverage** before 1984 is not available from the EPA source used for the 2026 manufacturer catalogue.
 - **European VIN fallback is a model-code table, not a licensed decoder.** It covers only `WAU`/`WUA` Audi VINs with `GY`, `FJ`, `FZ`, or `HC`; other European makes and model codes still return no model. `HC` is not in NHTSA's US Audi sheet, and the fleet's `E3 CUV` labels do not match a documented Audi model, so those rows decode as A2 e-tron with a verification note. VINs with no make/model (e.g. Renault `VF1RFB00X12345678`) are not guessed; they show the explicit market-data state and skip the model-year recall query.
 - **No European recall source.** For pattern-inferred European models, the app deliberately skips NHTSA's US-market recall and safety queries rather than presenting US campaigns as local ones.
@@ -429,7 +446,7 @@ the 15 write-durable. No commit, push, or deploy was performed.
 ## 10. Session handoff
 
 - Worktree: `C:\Users\GNKU0BO\.freebuff\worktrees\de09c1dc\a6d163dd7de11114ee28c64d1b66174d1cf7c85f33b6be42`
-- App commit `3d79727` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45029726054`); its tracker update is the separate documentation commit `ea27bd8`.
+- App commit `ed75f3f` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45060201710`); the live My Garage holds the 15-vehicle fleet at the 20-vehicle cap.
 - Do not commit, push, or deploy further without explicit authorization.
 - Dev server may be running at `http://127.0.0.1:5173`; reuse it rather than starting a duplicate.
 - When checking live behavior through the preview panel, first confirm which tab it reports as active (`preview_status`). The panel delivers mouse and keyboard input only to that visible tab: a background tab with `document.visibilityState === "hidden"` receives no `pointerdown`/`mousedown`/`click` or `keydown` at all, so a button there appears dead while its handler is fine. In a visible tab the same control delivers a full trusted event chain and works. Investigating the deployed Recall Center Remove button confirmed this — the click failure was panel input routing, not the page — so activate or reopen the tab before calling a live control broken.
