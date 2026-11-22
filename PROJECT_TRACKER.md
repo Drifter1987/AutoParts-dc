@@ -303,6 +303,7 @@ Committed as `95f0d2d` and deployed in Pages run `45024064731`. The bridge leave
 - App commit `95f0d2d` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45024064731`). The tracker is a separate documentation commit.
 - Do not commit, push, or deploy further without explicit authorization.
 - Dev server may be running at `http://127.0.0.1:5173`; reuse it rather than starting a duplicate.
+- When checking live behavior through the preview panel, first confirm which tab it reports as active (`preview_status`). The panel delivers mouse and keyboard input only to that visible tab: a background tab with `document.visibilityState === "hidden"` receives no `pointerdown`/`mousedown`/`click` or `keydown` at all, so a button there appears dead while its handler is fine. In a visible tab the same control delivers a full trusted event chain and works. Investigating the deployed Recall Center Remove button confirmed this — the click failure was panel input routing, not the page — so activate or reopen the tab before calling a live control broken.
 - Test fixtures: 2020 Civic VIN `2HGFC2F59LH500001`; other examples `1HGCM82633A004352`, `4T1BF3EK8AU561547`.
 - When changing routes: update `src/App.tsx`, ensure lazy imports remain compatible with `scripts/prerender.mjs`, and rerun build + prerender.
 - When changing the camera/photo path: preserve local-only processing and update both the disclosure and upload-failure tests.
