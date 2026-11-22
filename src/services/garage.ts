@@ -146,3 +146,22 @@ export function replaceGarageVehicles(vehicles: GarageVehicle[]): boolean {
 export function garageChangedEvent(): string {
   return CHANGE_EVENT;
 }
+
+/**
+ * Browsers fire `storage` only in the tabs that did not write. Bridge it to the
+ * in-page event so every garage consumer refreshes regardless of which tab
+ * made the change.
+ */
+function onStorage(event: StorageEvent): void {
+  if (event.key !== null && event.key !== STORAGE_KEY) return;
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+// HMR can re-run this module; register the bridge once per document.
+if (typeof window !== 'undefined') {
+  const tracked = window as Window & { __autopartsGarageStorageSync?: boolean };
+  if (!tracked.__autopartsGarageStorageSync) {
+    tracked.__autopartsGarageStorageSync = true;
+    window.addEventListener('storage', onStorage);
+  }
+}

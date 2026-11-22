@@ -368,7 +368,7 @@ test.describe('Civic parts vertical slice', () => {
     await expect(page.getByLabel('Notes for Civic EX 1.5L Turbo')).toHaveValue('Restored notes');
   });
 
-  test('reports rejected name and notes saves and saves once storage works', async ({ page }) => {
+  test('reports rejected garage writes and recovers when storage works', async ({ page }) => {
     await page.goto('/garage');
     await page.evaluate(() => {
       localStorage.setItem(
@@ -428,6 +428,85 @@ test.describe('Civic parts vertical slice', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
     await expect(page.getByLabel('Notes for Weekend toy')).toHaveValue('Note the browser rejects');
+
+    await blockGarageWrites(page);
+    await page.getByRole('button', { name: 'Remove Weekend toy from My Garage' }).click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'Could not update My Garage. Browser storage is unavailable or full.',
+    );
+    await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
+
+    await restoreGarageWrites(page);
+    await page.getByRole('button', { name: 'Remove Weekend toy from My Garage' }).click();
+    await expect(page.getByRole('heading', { name: 'Weekend toy' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'No saved vehicles yet' })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
+
+    await blockGarageWrites(page);
+    await page.getByRole('button', { name: 'Save to My Garage' }).click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'Could not update My Garage. Browser storage is unavailable or full.',
+    );
+    await expect(page.getByRole('button', { name: 'Save to My Garage' })).toBeVisible();
+
+    await restoreGarageWrites(page);
+    await page.getByRole('button', { name: 'Save to My Garage' }).click();
+    await expect(page.getByRole('button', { name: 'Saved to My Garage' })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+
+  test('syncs a rename and notes save to another open tab', async ({ page, context }) => {
+    await page.goto('/garage');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'autoparts.garage.v1',
+        JSON.stringify([
+          {
+            vin: '2HGFC2F59LH500001',
+            year: '2020',
+            make: 'HONDA',
+            model: 'Civic',
+            trim: 'EX',
+            engine: '1.5L Turbo',
+            name: null,
+            notes: 'Original note',
+            savedAt: '2026-01-02T10:00:00.000Z',
+          },
+        ]),
+      );
+    });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Civic EX 1.5L Turbo' })).toBeVisible();
+
+    const other = await context.newPage();
+    const external: string[] = [];
+    await other.route(/^https?:\/\//, route => {
+      const url = new URL(route.request().url());
+      if (url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]') {
+        return route.continue();
+      }
+      external.push(url.href);
+      return route.abort();
+    });
+    await stubGoogleFonts(other);
+    await other.goto('/garage');
+    await expect(other.getByLabel('Notes for Civic EX 1.5L Turbo')).toHaveValue('Original note');
+
+    await page.getByRole('button', { name: 'Rename vehicle' }).click();
+    await page.getByLabel('Vehicle name').fill('Shared name');
+    await page.getByRole('button', { name: 'Save name' }).click();
+
+    await expect(other.getByRole('heading', { name: 'Shared name' })).toBeVisible();
+    await expect(other.getByLabel('Notes for Shared name')).toHaveValue('Original note');
+
+    await page.getByLabel('Notes for Shared name').fill('Saved from the first tab');
+    await page.getByLabel('Notes for Shared name').blur();
+
+    await expect(other.getByLabel('Notes for Shared name')).toHaveValue('Saved from the first tab');
+    expect(external).toEqual([]);
   });
 });
 
