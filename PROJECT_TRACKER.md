@@ -1,9 +1,9 @@
 # AutoParts — Project Tracker
 
 **Last updated:** 2026-11-22  
-**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `95f0d2d`, GitHub Pages run `45024064731` succeeded.  
+**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `3d79727` (documentation commit `ea27bd8`), GitHub Pages run `45029726054` succeeded.  
 **Branch/worktree state:** app commit pushed to `main`; this tracker is committed separately. Markdown-only pushes do not redeploy Pages.  
-**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. Full suite on 2026-11-22: **108 passed** in 1.1 min (includes the Recall Watch sync, the expanded garage test, and the local route-focus spec).
+**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. The Recall Center Remove button now meets a 44 px mobile tap target — measured at **44.0 px** at 390 px wide and **30.8 px** at 1280 px (unchanged desktop) — committed as `3d79727`, documented in `ea27bd8`, and live in Pages run `45029726054`. Full suite on 2026-11-22: **109 passed** in 1.1 min (includes the Recall Watch sync, the Remove-button tap-target regression, the expanded garage test, and the local route-focus spec).
 
 This file is the continuity record for the AutoParts project. Read it before changing behavior, accessibility, data claims, or the static-host pipeline.
 
@@ -269,6 +269,21 @@ Committed as `e924f0f` and deployed in Pages run `45020132430`; live checks pass
 
 Committed as `95f0d2d` and deployed in Pages run `45024064731`. The bridge leaves `write()`, merge/newest-campaign handling, and failure swallowing unchanged.
 
+### 2026-11-22 — Recall Center Remove tap target
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| Recall Watch Playwright group | **8 passed** in 20.6 s |
+| `keeps the Remove button tappable on mobile without enlarging it on desktop` (new) | Pass: 44 px minimum and width at 390 px; `min-height` back to `auto` and the ~30.8 px height at 1280 px |
+| Live check on the deployed origin | Pass: **44.0 px** tall with `min-height: 44px` and no horizontal overflow at 390 × 844; **30.8 px** tall with `min-height: auto` at 1280 × 900, matching the pre-change 92 × 30.8 button |
+| Deployed assets | `index-Cct9BjPj.js` / `features-C75z1qNG.css` (previous entry `index-Bfm69lPT.js`) |
+
+The rule is `@media (width<=640px) { .watchRemove { min-width: 44px; min-height: 44px } }` in `src/styles/features.module.css`, applied only to the Recall Center Remove button in `src/pages/RecallCenterPage.tsx`. Shared `.btn`/`.small` styles are untouched, so desktop renders as before.
+
+App commit `3d79727`, documentation commit `ea27bd8`, deployed as part of Pages run `45029726054` (build, deploy, and deployed Pages smoke all succeeded).
+
 ---
 
 ## 8. Known limitations and open risks
@@ -300,7 +315,7 @@ Committed as `95f0d2d` and deployed in Pages run `45024064731`. The bridge leave
 ## 10. Session handoff
 
 - Worktree: `C:\Users\GNKU0BO\.freebuff\worktrees\de09c1dc\a6d163dd7de11114ee28c64d1b66174d1cf7c85f33b6be42`
-- App commit `95f0d2d` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45024064731`). The tracker is a separate documentation commit.
+- App commit `3d79727` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45029726054`); its tracker update is the separate documentation commit `ea27bd8`.
 - Do not commit, push, or deploy further without explicit authorization.
 - Dev server may be running at `http://127.0.0.1:5173`; reuse it rather than starting a duplicate.
 - When checking live behavior through the preview panel, first confirm which tab it reports as active (`preview_status`). The panel delivers mouse and keyboard input only to that visible tab: a background tab with `document.visibilityState === "hidden"` receives no `pointerdown`/`mousedown`/`click` or `keydown` at all, so a button there appears dead while its handler is fine. In a visible tab the same control delivers a full trusted event chain and works. Investigating the deployed Recall Center Remove button confirmed this — the click failure was panel input routing, not the page — so activate or reopen the tab before calling a live control broken.
@@ -313,3 +328,4 @@ Committed as `95f0d2d` and deployed in Pages run `45024064731`. The bridge leave
 - When changing notes or backup: keep `GARAGE_NOTES_MAX_LENGTH` shared by the service, textarea, and backup importer, and preserve replace-on-restore semantics — a backup import must not merge.
 - When changing garage updates: keep the `storage` bridge in `src/services/garage.ts` and have consumers listen to `garageChangedEvent()`; the two-tab regression test is `syncs a rename and notes save to another open tab`.
 - When changing Recall Watch updates: keep the `storage` bridge in `src/services/recallWatch.ts` and have consumers listen to `recallWatchChangedEvent()`; the two-tab regression test is `syncs Recall Watch additions and removals across tabs`.
+- When changing the Recall Center Remove button: keep the mobile-only 44 px rule on `.watchRemove` and the regression test `keeps the Remove button tappable on mobile without enlarging it on desktop`; desktop must stay at the ~30.8 px ghost-button height.
