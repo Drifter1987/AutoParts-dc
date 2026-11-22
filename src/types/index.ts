@@ -144,6 +144,8 @@ export interface GarageVehicle {
   model: string;
   trim: string | null;
   engine: string | null;
+  name?: string | null;
+  notes?: string | null;
   savedAt: string;
 }
 

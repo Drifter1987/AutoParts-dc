@@ -278,8 +278,38 @@ test.describe('Civic parts vertical slice', () => {
 
     await page.getByRole('link', { name: 'Garage', exact: true }).click();
     await expect(page).toHaveURL(/\/garage$/);
-    await expect(page.getByRole('heading', { name: '2020 HONDA Civic EX' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Civic EX 1.5L Turbo' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Browse matching parts/ })).toBeVisible();
+  });
+
+  test('renames a saved vehicle and keeps free notes', async ({ page }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
+    await page.getByRole('button', { name: 'Save to My Garage' }).click();
+    await page.getByRole('link', { name: 'Garage', exact: true }).click();
+
+    await expect(page.getByRole('heading', { name: 'Civic EX 1.5L Turbo' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Rename vehicle' }).click();
+    const nameInput = page.getByLabel('Vehicle name');
+    await expect(nameInput).toHaveValue('Civic EX 1.5L Turbo');
+    await expect(nameInput).toBeFocused();
+    await nameInput.fill('Weekend runabout');
+    await page.getByRole('button', { name: 'Save name' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Weekend runabout' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Rename vehicle' })).toBeFocused();
+
+    const notes = page.getByLabel('Notes for Weekend runabout');
+    await notes.fill('Oil change due at 60k miles.');
+    await notes.blur();
+    await expect(page.getByRole('status').filter({ hasText: 'Notes saved.' })).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Weekend runabout' })).toBeVisible();
+    await expect(page.getByLabel('Notes for Weekend runabout')).toHaveValue(
+      'Oil change due at 60k miles.',
+    );
   });
 });
 
@@ -853,13 +883,15 @@ test.describe('product safety and handoff layer', () => {
             model: 'Civic',
             trim: 'EX',
             engine: '1.5L Turbo',
+            name: 'Weekend toy',
+            notes: 'Oil change due at 120k, use 5W-30.',
             savedAt: new Date().toISOString(),
           },
         ]),
       );
     });
     await page.reload();
-    await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Create transfer code' }).click();
     const code = await page.getByLabel('Garage transfer code').inputValue();
@@ -871,6 +903,9 @@ test.describe('product safety and handoff layer', () => {
     await page.getByRole('button', { name: 'Import and merge' }).click();
 
     await expect(page.getByText(/Imported 1 saved vehicle/i)).toBeVisible();
-    await expect(page.getByRole('heading', { name: /2020 HONDA Civic EX/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Weekend toy' })).toBeVisible();
+    await expect(page.getByLabel('Notes for Weekend toy')).toHaveValue(
+      'Oil change due at 120k, use 5W-30.',
+    );
   });
 });
