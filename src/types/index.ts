@@ -219,6 +219,8 @@ export interface RecallWatch {
   year: string;
   make: string;
   model: string;
+  /** Preserved so an inferred European model is not queried as US-market. */
+  model_source?: VINDecodeResult['model_source'];
   trim: string | null;
   engine: string | null;
   addedAt: string;
@@ -319,6 +321,8 @@ export interface FleetRow {
   model?: string | null;
   /** Set when the model came from the VIN pattern and US recalls were skipped. */
   recallNote?: string | null;
+  /** Why the model-year lookup ran, was skipped, or could not run. */
+  recallScope?: 'model-year' | 'inferred-model' | 'incomplete-identity';
   recalls?: VehicleRecallLike[];
   error?: string;
   checkedAt?: string;

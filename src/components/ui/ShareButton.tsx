@@ -5,16 +5,29 @@ import { trackEvent } from '../../services/telemetry';
 interface ShareButtonProps {
   label?: string;
   className?: string;
+  /** Share-sheet title; defaults to the current document title. */
+  title?: string;
+  /** Optional share-sheet body so the shared text matches the identity shown. */
+  text?: string;
 }
 
-export default function ShareButton({ label = 'Share', className }: ShareButtonProps) {
+export default function ShareButton({
+  label = 'Share',
+  className,
+  title,
+  text,
+}: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
     const url = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: document.title, url });
+        await navigator.share({
+          title: title ?? document.title,
+          ...(text ? { text } : {}),
+          url,
+        });
         trackEvent('share_sheet_opened', { path: window.location.pathname });
         return;
       }

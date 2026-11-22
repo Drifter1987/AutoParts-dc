@@ -14,6 +14,11 @@ import {
   renameGarageVehicle,
   updateGarageVehicleNotes,
 } from '../services/garage';
+import {
+  MODEL_DATA_UNAVAILABLE,
+  getVehicleIdentity,
+  hasCompleteVehicleIdentity,
+} from '../services/vehicleIdentity';
 import GarageBackupPanel from '../components/ui/GarageBackupPanel';
 import GarageFleetImportPanel from '../components/ui/GarageFleetImportPanel';
 import GarageTransferPanel from '../components/ui/GarageTransferPanel';
@@ -39,6 +44,8 @@ function GarageVehicleCard({
 }) {
   const displayName = getGarageVehicleName(vehicle);
   const defaultName = getDefaultVehicleName(vehicle);
+  const identity = getVehicleIdentity(vehicle);
+  const identityComplete = hasCompleteVehicleIdentity(vehicle);
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState(displayName);
   // Null means "show the stored notes". A draft exists only while the user is
@@ -127,9 +134,22 @@ function GarageVehicleCard({
         </p>
       )}
       <p className={styles.partMeta}>
-        {[vehicle.year, vehicle.make, vehicle.model, vehicle.trim].filter(Boolean).join(' ')}
-        {vehicle.engine ? ` · ${vehicle.engine}` : ''}
+        {[
+          identityComplete
+            ? [identity, vehicle.trim].filter(Boolean).join(' ')
+            : MODEL_DATA_UNAVAILABLE,
+          vehicle.engine,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
+      {!identityComplete && (
+        <p className={styles.partMeta} role="status">
+          {identity ? `NHTSA returned only “${identity}” for this VIN. ` : ''}
+          Model-year recall and parts lookups need a year, make, and model. Use VIN details
+          to check this VIN at NHTSA.
+        </p>
+      )}
 
       {renaming && (
         <form className={styles.garageForm} onSubmit={saveRename}>

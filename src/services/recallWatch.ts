@@ -48,6 +48,9 @@ function read(): RecallWatch[] {
         year: item.year || '',
         make: item.make || '',
         model: item.model || '',
+        // Keep the VIN-pattern marker so a European inferred model is never
+        // queried as if it were a US-market model name.
+        model_source: item.model_source === 'vin-pattern' ? 'vin-pattern' : null,
         trim: item.trim ?? null,
         engine: item.engine ?? null,
         addedAt: item.addedAt || new Date().toISOString(),
@@ -118,6 +121,7 @@ export function watchRecallResult(result: VINDecodeResult): RecallWatchAddition 
     year: result.year || existing?.year || '',
     make: result.make || existing?.make || '',
     model: result.model || existing?.model || '',
+    model_source: result.model_source ?? existing?.model_source ?? null,
     trim: result.trim ?? existing?.trim ?? null,
     engine: result.engine ?? existing?.engine ?? null,
     addedAt: existing?.addedAt ?? new Date().toISOString(),

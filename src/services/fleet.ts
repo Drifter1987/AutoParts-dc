@@ -1,6 +1,7 @@
 import type { FleetRow } from '../types';
 import { decodeVin } from './nhtsa';
 import { getRecallsForVehicle, nhtsaRecallUrl } from './recalls';
+import { getRecallLookupScope, getRecallSkipNote } from './vehicleIdentity';
 
 const MAX_VINS = 25;
 const VIN_PATTERN = /[A-HJ-NPR-Z0-9]{17}/g;
@@ -28,16 +29,17 @@ export async function checkFleetVins(
       onRow({ ...row });
       try {
         const decoded = await decodeVin(row.vin, { includeSpecs: false });
-        const recalls = await getRecallsForVehicle(decoded);
+        const recallScope = getRecallLookupScope(decoded);
+        // A model-year query with an incomplete identity would come back empty
+        // for the wrong reason, so record that the lookup was skipped.
+        const recalls = recallScope === 'model-year' ? await getRecallsForVehicle(decoded) : [];
         Object.assign(row, {
           status: 'complete',
           year: decoded.year,
           make: decoded.make,
           model: decoded.model,
-          recallNote:
-            decoded.model_source === 'vin-pattern'
-              ? 'US-market recall lookup skipped — model inferred from the VIN.'
-              : null,
+          recallScope,
+          recallNote: getRecallSkipNote(decoded),
           recalls,
           checkedAt: new Date().toISOString(),
         });
@@ -63,19 +65,32 @@ export function fleetCsv(rows: FleetRow[]): string {
     'Model',
     'Campaigns',
     'CampaignNumbers',
+    'RecallLookup',
     'NHTSA_VIN_Check',
     'Status',
     'Error',
   ];
   const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const lookupLabel = (row: FleetRow): string => {
+    if (row.status !== 'complete') return '';
+    if (row.recallScope === 'inferred-model') return 'not-run: model inferred from VIN';
+    if (row.recallScope === 'incomplete-identity') {
+      return 'not-run: incomplete vehicle identity';
+    }
+    return row.recallScope === 'model-year' ? 'model-year' : '';
+  };
   const lines = rows.map(row =>
     [
       row.vin,
       row.year ?? '',
       row.make ?? '',
       row.model ?? '',
-      String(row.recalls?.length ?? 0),
+      // A blank count means no model-year lookup ran; never export a false 0.
+      row.status === 'complete' && row.recallScope === 'model-year'
+        ? String(row.recalls?.length ?? 0)
+        : '',
       (row.recalls ?? []).map(recall => recall.campaignNumber).join('; '),
+      lookupLabel(row),
       nhtsaRecallUrl(row.vin),
       row.status,
       row.error ?? '',

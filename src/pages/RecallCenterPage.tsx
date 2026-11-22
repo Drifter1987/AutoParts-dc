@@ -26,6 +26,12 @@ import {
 } from '../services/recallWatch';
 import { getRecallsForVehicle, nhtsaCampaignUrl, nhtsaRecallUrl, type VehicleRecall } from '../services/recalls';
 import { getCatalogVehicle, getVehiclePath } from '../services/parts';
+import {
+  MODEL_DATA_UNAVAILABLE,
+  getRecallLookupScope,
+  getVehicleIdentity,
+  hasCompleteVehicleIdentity,
+} from '../services/vehicleIdentity';
 import { trackEvent } from '../services/telemetry';
 import type { RecallWatch } from '../types';
 import styles from '../styles/features.module.css';
@@ -57,7 +63,8 @@ function catalogPath(watch: RecallWatch): string | null {
 }
 
 function dealerSearchUrl(watch: RecallWatch): string {
-  const query = `${watch.year} ${watch.make} ${watch.model} dealer recall repair`;
+  const identity = getVehicleIdentity(watch);
+  const query = `${identity || watch.vin} dealer recall repair`;
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
 
@@ -116,6 +123,21 @@ export default function RecallCenterPage() {
       },
     }));
     try {
+      const lookupScope = getRecallLookupScope(watch);
+      if (lookupScope !== 'model-year') {
+        // A model-year request would come back empty for an incomplete or
+        // inferred identity, which reads as "zero campaigns". Report the skip.
+        setState(previous => ({
+          ...previous,
+          [watch.vin]: {
+            recalls: [],
+            checking: false,
+            error: false,
+            newCampaigns: [],
+          },
+        }));
+        return;
+      }
       const recalls = await getRecallsForVehicle(watch);
       const result = recordRecallCheck(watch, recalls);
       // Another tab removed this watch while the request was in flight.
@@ -143,7 +165,7 @@ export default function RecallCenterPage() {
         Notification.permission === 'granted'
       ) {
         new Notification('New recall campaigns reported', {
-          body: `${result.newCampaigns.length} new campaign(s) for your ${watch.year} ${watch.make} ${watch.model}. Confirm open status by VIN on NHTSA.`,
+          body: `${result.newCampaigns.length} new campaign(s) for your ${getVehicleIdentity(watch) || watch.vin}. Confirm open status by VIN on NHTSA.`,
         });
       }
     } catch {
@@ -263,24 +285,28 @@ export default function RecallCenterPage() {
             {watches.map(watch => {
               const row = state[watch.vin];
               const path = catalogPath(watch);
+              const lookupScope = getRecallLookupScope(watch);
+              const identity = getVehicleIdentity(watch);
               return (
                 <section key={watch.vin} className={`card ${styles.panel}`} aria-labelledby={`watch-${watch.vin}`}>
                   <div className={styles.panelHeader}>
                     <div>
                       <p className="eyebrow">Watched VIN</p>
                       <h2 id={`watch-${watch.vin}`} className={styles.panelTitle}>
-                        {watch.year} {watch.make} {watch.model}
+                        {hasCompleteVehicleIdentity(watch) ? identity : MODEL_DATA_UNAVAILABLE}
                       </h2>
                       <p className={styles.watchVin}>{watch.vin}</p>
                     </div>
                     <div className={styles.actions}>
                       <span className="badge badge-ice"><Bell size={12} /> Recall watch</span>
-                      <span className={`badge ${watch.newCampaigns.length ? 'badge-amber' : 'badge-success'}`}>
-                        {watch.newCampaigns.length
-                          ? `${watch.newCampaigns.length} new`
-                          : watch.lastCheckedAt
-                            ? 'No new campaigns'
-                            : 'Awaiting first check'}
+                      <span className={`badge ${lookupScope !== 'model-year' || watch.newCampaigns.length ? 'badge-amber' : 'badge-success'}`}>
+                        {lookupScope !== 'model-year'
+                          ? 'Lookup skipped'
+                          : watch.newCampaigns.length
+                            ? `${watch.newCampaigns.length} new`
+                            : watch.lastCheckedAt
+                              ? 'No new campaigns'
+                              : 'Awaiting first check'}
                       </span>
                       <button
                         type="button"
@@ -295,6 +321,21 @@ export default function RecallCenterPage() {
                       </button>
                     </div>
                   </div>
+
+                  {lookupScope !== 'model-year' && (
+                    <div
+                      className={`${styles.status} ${styles.statusWarning}`}
+                      role="status"
+                      style={{ marginBottom: 'var(--space-3)' }}
+                    >
+                      <AlertTriangle size={16} aria-hidden="true" />
+                      <span>
+                        {lookupScope === 'inferred-model'
+                          ? 'This model was inferred from the VIN, so US-market model-year recall checks are skipped. Use the VIN link above to check NHTSA directly.'
+                          : `${identity ? `NHTSA returned only “${identity}”. ` : ''}${MODEL_DATA_UNAVAILABLE}. Model-year recall checks need a year, make, and model, so none ran for this VIN. Use the VIN link above to check NHTSA directly.`}
+                      </span>
+                    </div>
+                  )}
 
                   {writeErrors[watch.vin] && (
                     <div
@@ -386,11 +427,13 @@ export default function RecallCenterPage() {
                       <div>
                         <p className={styles.label}>Campaign history · model-year</p>
                         <p className={styles.muted}>
-                          {row?.checking
-                            ? 'Checking NHTSA…'
-                            : row?.recalls
-                              ? `${row.recalls.length} campaign${row.recalls.length === 1 ? '' : 's'} returned for the model year; not VIN-specific.`
-                              : 'Run a recheck to load current campaigns.'}
+                          {lookupScope !== 'model-year'
+                            ? 'Model-year recall lookups do not run for this vehicle.'
+                            : row?.checking
+                              ? 'Checking NHTSA…'
+                              : row?.recalls
+                                ? `${row.recalls.length} campaign${row.recalls.length === 1 ? '' : 's'} returned for the model year; not VIN-specific.`
+                                : 'Run a recheck to load current campaigns.'}
                         </p>
                       </div>
                     </div>
@@ -466,10 +509,10 @@ export default function RecallCenterPage() {
                         </div>
                       );
                     })}
-                    {!row?.recalls && !row?.checking && !row?.error && (
+                    {lookupScope === 'model-year' && !row?.recalls && !row?.checking && !row?.error && (
                       <p className={styles.muted}>No campaigns loaded yet. Use “Recheck now” above.</p>
                     )}
-                    {row?.recalls?.length === 0 && (
+                    {lookupScope === 'model-year' && row?.recalls?.length === 0 && (
                       <p className={styles.muted}>
                         No campaigns returned for this model year. This does not prove this VIN has
                         no open recall; use the NHTSA VIN check.

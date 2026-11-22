@@ -7,6 +7,12 @@ import SafetyIntelligencePanel from './SafetyIntelligencePanel';
 import RecallWatchButton from './RecallWatchButton';
 import ShareButton from './ShareButton';
 import { trackEvent } from '../../services/telemetry';
+import {
+  MODEL_DATA_UNAVAILABLE,
+  getRecallLookupScope,
+  getVehicleIdentity,
+  hasCompleteVehicleIdentity,
+} from '../../services/vehicleIdentity';
 import type { Brand, VINDecodeResult } from '../../types';
 import featureStyles from '../../styles/features.module.css';
 import styles from './VINSafetyReport.module.css';
@@ -30,8 +36,23 @@ export default function VINSafetyReport({
   cachedAt,
 }: VINSafetyReportProps) {
   const [generatedAt] = useState(() => new Date());
-  const vehicleLabel =
-    [result.year, result.make, result.model].filter(Boolean).join(' ') || 'Vehicle';
+  const identity = getVehicleIdentity(result);
+  const identityComplete = hasCompleteVehicleIdentity(result);
+  const lookupScope = getRecallLookupScope(result);
+  const vehicleLabel = identityComplete
+    ? identity
+    : identity
+      ? `${identity} — ${MODEL_DATA_UNAVAILABLE}`
+      : MODEL_DATA_UNAVAILABLE;
+  const shareTitle = identityComplete
+    ? `${identity}${result.trim ? ` ${result.trim}` : ''} — VIN safety report`
+    : `VIN safety report — ${MODEL_DATA_UNAVAILABLE}`;
+  const shareText =
+    lookupScope === 'model-year'
+      ? `VIN safety report for ${vehicleLabel}: decoded specifications, NHTSA model-year campaigns, complaints, and next steps.`
+      : lookupScope === 'inferred-model'
+        ? `VIN safety report for ${vehicleLabel}: the model was inferred from the VIN, so no US-market model-year recall lookup ran.`
+        : `VIN safety report for ${result.vin}: ${MODEL_DATA_UNAVAILABLE}, so no model-year recall lookup ran.`;
 
   useEffect(() => {
     document.body.classList.add('vin-report-print');
@@ -45,7 +66,7 @@ export default function VINSafetyReport({
           <p className="eyebrow">VIN safety report</p>
           <h1 id="report-title" className={styles.title}>
             {vehicleLabel}
-            {result.trim && (
+            {identityComplete && result.trim && (
               <>
                 {' '}
                 <span className={styles.trim}>{result.trim}</span>
@@ -56,6 +77,19 @@ export default function VINSafetyReport({
             <span>VIN</span>
             <code>{result.vin}</code>
           </p>
+          {!identityComplete && (
+            <p className={styles.cachedNote} role="status">
+              {MODEL_DATA_UNAVAILABLE}. NHTSA returned this VIN without enough model-year,
+              make, and model detail, so this report carries VIN-specific specifications only
+              and no model-year recall lookup ran.
+            </p>
+          )}
+          {lookupScope === 'inferred-model' && (
+            <p className={styles.cachedNote} role="status">
+              Model inferred from VIN positions 7–8 ({result.model_code}). No US-market
+              model-year recall lookup was run.
+            </p>
+          )}
           <p className={styles.timestamp}>
             <Clock size={14} />
             Report generated{' '}
@@ -82,7 +116,7 @@ export default function VINSafetyReport({
           >
             <Printer size={15} /> Print / save PDF
           </button>
-          <ShareButton className="btn btn-ghost" label="Share report" />
+          <ShareButton className="btn btn-ghost" label="Share report" title={shareTitle} text={shareText} />
           <Link
             to={`/vin?vin=${encodeURIComponent(result.vin)}`}
             className="btn btn-ghost"
@@ -101,12 +135,31 @@ export default function VINSafetyReport({
             <a href={`https://www.nhtsa.gov/recalls?vin=${encodeURIComponent(result.vin)}`} target="_blank" rel="noreferrer">
               NHTSA VIN lookup
             </a>{' '}
-            are specific to this vehicle&apos;s VIN. The recall campaign list below is matched by
-            model year, make, and model — NHTSA&apos;s public API does not return whether a
-            campaign is open or already repaired on this VIN. Confirm open status and remedy
-            eligibility with NHTSA or a dealer. Consumer complaints and investigations are
-            also matched by model year, make, and model — they are model-level context and are
-            not confirmed recalls for this VIN.
+            are specific to this vehicle&apos;s VIN.{' '}
+            {lookupScope === 'model-year' ? (
+              <>
+                The recall campaign list below is matched by model year, make, and model —
+                NHTSA&apos;s public API does not return whether a campaign is open or already
+                repaired on this VIN. Confirm open status and remedy eligibility with NHTSA or a
+                dealer. Consumer complaints and investigations are also matched by model year,
+                make, and model — they are model-level context and are not confirmed recalls for
+                this VIN.
+              </>
+            ) : lookupScope === 'inferred-model' ? (
+              <>
+                This vehicle&apos;s model was inferred from its VIN pattern, so AutoParts did not
+                run a model-year recall, complaint, or investigation lookup; NHTSA&apos;s public
+                data covers the US market. Confirm open status and remedy eligibility for this
+                VIN with NHTSA or a dealer.
+              </>
+            ) : (
+              <>
+                This VIN decoded without a model year, make, and model for its market, so
+                AutoParts did not run a model-year recall, complaint, or investigation lookup.
+                There is no campaign list below to match to this vehicle. Confirm open status and
+                remedy eligibility for this VIN with NHTSA or a dealer.
+              </>
+            )}
           </p>
         </div>
       </aside>
@@ -129,12 +182,16 @@ export default function VINSafetyReport({
               to confirm whether any campaign is open for this exact vehicle.
             </li>
             <li>
-              Ask a dealer or mechanic to verify remedy eligibility before scheduling work; bring
-              the campaign numbers above and the VIN.
+              {lookupScope === 'model-year'
+                ? 'Ask a dealer or mechanic to verify remedy eligibility before scheduling work; bring the campaign numbers above and the VIN.'
+                : 'Ask a dealer or mechanic to check whether any campaign applies to this VIN; bring the VIN, and confirm any remedy eligibility before scheduling work.'}
             </li>
             <li>
-              Save this VIN to Recall Watch to recheck model-year campaigns on a later visit, and
-              share this report with a seller or mechanic.
+              {lookupScope === 'model-year'
+                ? 'Save this VIN to Recall Watch to recheck model-year campaigns on a later visit, and share this report with a seller or mechanic.'
+                : lookupScope === 'inferred-model'
+                  ? 'Save this VIN to Recall Watch to keep a VIN-specific NHTSA link; US-market rechecks stay off while the model is inferred from the VIN. Share this report with a seller or mechanic.'
+                  : 'Save this VIN to Recall Watch to keep a VIN-specific NHTSA link; model-year rechecks stay off until a year, make, and model are available. Share this report with a seller or mechanic.'}
             </li>
           </ol>
           <div className={`${styles.noPrint} ${featureStyles.actions}`} data-report-action style={{ marginTop: 'var(--space-4)' }}>

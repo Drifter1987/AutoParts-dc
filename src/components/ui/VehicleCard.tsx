@@ -11,6 +11,7 @@ import {
 import SaveVehicleButton from './SaveVehicleButton';
 import ShareButton from './ShareButton';
 import { trackEvent } from '../../services/telemetry';
+import { MODEL_DATA_UNAVAILABLE } from '../../services/vehicleIdentity';
 import type { Brand, VINDecodeResult } from '../../types';
 import styles from './VehicleCard.module.css';
 
@@ -184,7 +185,20 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
               >
                 <FileText size={13} /> Safety report
               </Link>
-              <ShareButton className={`btn btn-ghost ${styles.footerAction}`} label="Share VIN" />
+              <ShareButton
+                className={`btn btn-ghost ${styles.footerAction}`}
+                label="Share VIN"
+                title={
+                  hasFullVehicleIdentity
+                    ? `${vehicleIdentity} VIN result`
+                    : `VIN ${result.vin} — ${MODEL_DATA_UNAVAILABLE}`
+                }
+                text={
+                  hasFullVehicleIdentity
+                    ? `Decoded VIN result for ${vehicleIdentity}.`
+                    : `Decoded VIN ${result.vin}. ${MODEL_DATA_UNAVAILABLE}, so no model-year recall lookup ran.`
+                }
+              />
             </div>
           </div>
           {catalogVehicle && partsPath ? (

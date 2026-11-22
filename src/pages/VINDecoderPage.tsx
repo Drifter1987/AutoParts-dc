@@ -18,6 +18,11 @@ import {
 } from '../services/parts';
 import { getCachedVinResult, cacheVinResult } from '../services/vinCache';
 import { trackEvent } from '../services/telemetry';
+import {
+  MODEL_DATA_UNAVAILABLE,
+  getVehicleIdentity,
+  hasCompleteVehicleIdentity,
+} from '../services/vehicleIdentity';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import type { NhtsaMakeResult } from '../services/nhtsa';
 import type { Brand, VINDecodeResult } from '../types';
@@ -48,12 +53,18 @@ export default function VINDecoderPage() {
   const urlVin = searchParams.get('vin');
   const isReport = searchParams.get('report') === '1';
   const lastUrlVin = useRef<string | null>(null);
-  const reportVehicle = result
-    ? [result.year, result.make, result.model].filter(Boolean).join(' ') || 'Vehicle'
-    : 'Vehicle';
+  const reportVehicle = result ? getVehicleIdentity(result) : '';
+  const reportIdentityComplete = Boolean(result && hasCompleteVehicleIdentity(result));
+  const reportTitle = !isReport
+    ? 'VIN Decoder — AutoParts'
+    : reportIdentityComplete
+      ? `${reportVehicle} VIN Safety Report — AutoParts`
+      : result
+        ? `VIN Safety Report — ${MODEL_DATA_UNAVAILABLE} — AutoParts`
+        : 'VIN Safety Report — AutoParts';
 
   usePageMetadata(
-    isReport ? `${reportVehicle} VIN Safety Report — AutoParts` : 'VIN Decoder — AutoParts',
+    reportTitle,
     isReport
       ? 'A shareable VIN safety report with decoded specifications, NHTSA recall campaigns, campaign links, and a VIN-specific open-recall check.'
       : 'Decode a 17-character VIN with the free NHTSA vPIC database to see make, model, year, engine, trim, and plant details.',
@@ -413,8 +424,9 @@ export default function VINDecoderPage() {
         {result && (
           <div className={styles.result}>
             <p className={styles.srOnly} role="status">
-              Decoded {[result.year, result.make, result.model].filter(Boolean).join(' ')} (
-              {result.vin}). Results are below the VIN form.
+              {hasCompleteVehicleIdentity(result)
+                ? `Decoded ${getVehicleIdentity(result)} (${result.vin}). Results are below the VIN form.`
+                : `Decoded VIN ${result.vin}. ${MODEL_DATA_UNAVAILABLE}, so no model-year lookups ran. Results are below the VIN form.`}
             </p>
             {cachedAt && (
               <p className={styles.manualNote} style={{ marginBottom: 'var(--space-2)' }}>

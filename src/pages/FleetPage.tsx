@@ -16,6 +16,11 @@ import {
   FLEET_MAX_VINS,
 } from '../services/fleet';
 import { nhtsaRecallUrl } from '../services/recalls';
+import {
+  MODEL_DATA_UNAVAILABLE,
+  getVehicleIdentity,
+  hasCompleteVehicleIdentity,
+} from '../services/vehicleIdentity';
 import { trackEvent } from '../services/telemetry';
 import CopyButton from '../components/ui/CopyButton';
 import RollingNumber from '../components/ui/RollingNumber';
@@ -105,6 +110,9 @@ export default function FleetPage() {
   const completeRows = rows.filter(row => row.status === 'complete');
   const recallRows = completeRows.filter(row => (row.recalls?.length ?? 0) > 0);
   const campaignCount = completeRows.reduce((total, row) => total + (row.recalls?.length ?? 0), 0);
+  const skippedLookupCount = completeRows.filter(
+    row => row.recallScope && row.recallScope !== 'model-year',
+  ).length;
   const errorCount = rows.filter(row => row.status === 'error').length;
 
   return (
@@ -201,6 +209,10 @@ export default function FleetPage() {
                 <span className={styles.summaryLabel}>Campaigns returned</span>
               </div>
               <div className={styles.summaryItem}>
+                <RollingNumber className={styles.summaryValue} value={skippedLookupCount} />
+                <span className={styles.summaryLabel}>Lookups skipped</span>
+              </div>
+              <div className={styles.summaryItem}>
                 <RollingNumber className={styles.summaryValue} value={errorCount} />
                 <span className={styles.summaryLabel}>Errors</span>
               </div>
@@ -222,13 +234,22 @@ export default function FleetPage() {
                     <tr key={row.vin}>
                       <td className={styles.vinCell}>{row.vin}</td>
                       <td>
-                        {row.year || row.make || row.model ? (
+                        {hasCompleteVehicleIdentity(row) ? (
                           <>
-                            <span className={styles.rowTitle}>{[row.year, row.make, row.model].filter(Boolean).join(' ')}</span>
+                            <span className={styles.rowTitle}>{getVehicleIdentity(row)}</span>
                             <span className={styles.listMeta}>{row.status === 'complete' ? 'Decoded' : row.status}</span>
                           </>
+                        ) : row.status === 'complete' ? (
+                          <>
+                            <span className={styles.rowTitle}>{MODEL_DATA_UNAVAILABLE}</span>
+                            <span className={styles.listMeta}>
+                              {getVehicleIdentity(row)
+                                ? `${getVehicleIdentity(row)} · model-year campaigns not checked`
+                                : 'Decoded VIN · model-year campaigns not checked'}
+                            </span>
+                          </>
                         ) : (
-                          <span className={styles.listMeta}>{row.status === 'pending' ? 'Queued' : '—'}</span>
+                          <span className={styles.listMeta}>{row.status === 'pending' ? 'Queued' : row.status}</span>
                         )}
                       </td>
                       <td>
@@ -266,8 +287,9 @@ export default function FleetPage() {
               </table>
             </div>
             <p className={styles.panelMeta} style={{ marginTop: 'var(--space-3)' }}>
-              Export contains VIN, decoded vehicle, campaign numbers, NHTSA VIN-check URL, and status.
-              It does not contain a claim about repair status.
+              Export contains VIN, decoded vehicle, campaign numbers, whether the model-year
+              lookup ran, NHTSA VIN-check URL, and status. It does not contain a claim about
+              repair status; a blank campaign count means no lookup ran.
             </p>
           </section>
         )}
