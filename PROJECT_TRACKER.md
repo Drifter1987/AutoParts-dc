@@ -1,9 +1,9 @@
 # AutoParts — Project Tracker
 
 **Last updated:** 2026-11-22  
-**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `e924f0f`, GitHub Pages run `45020132430` succeeded.  
+**Live deployment:** https://len-golani.github.io/AutoParts-fb/ — app commit `95f0d2d`, GitHub Pages run `45024064731` succeeded.  
 **Branch/worktree state:** app commit pushed to `main`; this tracker is committed separately. Markdown-only pushes do not redeploy Pages.  
-**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. The last full-suite baseline was **96 passed** on 2026-11-20 and has not been re-baselined since.
+**Verification snapshot:** My Garage review pass verified with 6 targeted Playwright tests, `tsc -b`, ESLint, production build, Pages deploy and deployed-Pages smoke, plus a live backup-restore check on the deployed origin. Cross-tab garage sync adds a seventh two-tab test, the write-failure test now also covers remove and save-to-garage, and both are live in `e924f0f` (Pages run `45020132430`), verified against the deployed origin. Recall Watch now has the same storage-event bridge, committed as `95f0d2d` and deployed in Pages run `45024064731`; its two-tab add/remove behavior was verified on the deployed origin. Full suite on 2026-11-22: **108 passed** in 1.1 min (includes the Recall Watch sync, the expanded garage test, and the local route-focus spec).
 
 This file is the continuity record for the AutoParts project. Read it before changing behavior, accessibility, data claims, or the static-host pipeline.
 
@@ -90,6 +90,7 @@ tests/
 
 - VIN decode with check-digit advisories, cached fallback, URL-shareable reports, vehicle specs.
 - Local My Garage, watchlist, recall rechecks, recall action center, fleet bulk checker and CSV export.
+- Recall Watch and the watchlist are the same local record (`autoparts.recall-watch.v1`); adding or removing a watch in one tab updates the list and any VIN-page watch button in other open tabs through the browser `storage` event. Covered by `syncs Recall Watch additions and removals across tabs`.
 - Real NHTSA recalls/complaints/investigations, model-level safety intelligence, fitment verification requests.
 - VIN camera scanner: live frame quality feedback, auto-read gating, rear/front switch, torch recovery, permission/track-end recovery, Code 39 support, photo upload, OCR review/correction, retake, cancellation.
 - Local OCR confidence/candidate handling; ordinary prose no longer creates false VIN matches.
@@ -256,6 +257,18 @@ Committed as `e924f0f` and deployed in Pages run `45020132430`.
 
 Committed as `e924f0f` and deployed in Pages run `45020132430`; live checks passed.
 
+### 2026-11-22 — Recall Watch cross-tab sync
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Pass |
+| `npm run lint` | Pass |
+| `syncs Recall Watch additions and removals across tabs` | Pass: add and remove in one tab update a VIN-page button and the Recall Watch list in another |
+| Recall Watch Playwright group | **3 passed** in 8.7 s |
+| Live two-tab check (deployed origin) | Pass: add in one tab activated the other tab's VIN button; remove returned it; re-adding from the second tab restored the Recall Center card in the first, all without reloading |
+
+Committed as `95f0d2d` and deployed in Pages run `45024064731`. The bridge leaves `write()`, merge/newest-campaign handling, and failure swallowing unchanged.
+
 ---
 
 ## 8. Known limitations and open risks
@@ -268,7 +281,7 @@ Committed as `e924f0f` and deployed in Pages run `45020132430`; live checks pass
 - **No server-side rate limiting** because there is no server; NHTSA calls are direct and subject to its availability/CORS behavior.
 - **Browser cameras and OCR** require real device testing; Playwright uses mocked media streams.
 - **A stale lazy chunk after a deploy** is handled by the existing error boundary reload, but has not been chaos-tested against a live Pages rollout.
-- **My Garage is browser-local.** Vehicles, names, and notes live in `localStorage`; there is no account or cloud sync, and clearing site data removes them. Cross-tab updates depend on the browser `storage` event, which fires in other same-origin tabs but not in the tab that wrote.
+- **My Garage and Recall Watch are browser-local.** Vehicles, names, notes, and watch records live in `localStorage`; there is no account or cloud sync, and clearing site data removes them. Cross-tab updates depend on the browser `storage` event, which fires in other same-origin tabs but not in the tab that wrote.
 - **Garage caps:** 12 vehicles, 80-character names, 4,000-character notes. Extra vehicles are not stored; longer notes are truncated at the same limit the backup importer uses.
 - **Backup files are user-managed.** They contain VINs and free-text notes and are never uploaded. A backup covers My Garage only — not Recall Watch, fitment requests, or demand captures.
 - **Restore is destructive by design.** Restoring a backup replaces the whole garage; the panel previews the file first, but there is no undo beyond keeping another backup.
@@ -287,7 +300,7 @@ Committed as `e924f0f` and deployed in Pages run `45020132430`; live checks pass
 ## 10. Session handoff
 
 - Worktree: `C:\Users\GNKU0BO\.freebuff\worktrees\de09c1dc\a6d163dd7de11114ee28c64d1b66174d1cf7c85f33b6be42`
-- App commit `e924f0f` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45020132430`). The tracker is a separate documentation commit.
+- App commit `95f0d2d` is live at https://len-golani.github.io/AutoParts-fb/ (Pages run `45024064731`). The tracker is a separate documentation commit.
 - Do not commit, push, or deploy further without explicit authorization.
 - Dev server may be running at `http://127.0.0.1:5173`; reuse it rather than starting a duplicate.
 - Test fixtures: 2020 Civic VIN `2HGFC2F59LH500001`; other examples `1HGCM82633A004352`, `4T1BF3EK8AU561547`.
@@ -298,3 +311,4 @@ Committed as `e924f0f` and deployed in Pages run `45020132430`; live checks pass
 - When changing My Garage: keep every write in `src/services/garage.ts` returning a boolean and surface failures with `GARAGE_WRITE_FAILED_MESSAGE`; run the garage Playwright group (`--grep "My Garage|saved vehicle|garage card|rejected garage|another open tab"`).
 - When changing notes or backup: keep `GARAGE_NOTES_MAX_LENGTH` shared by the service, textarea, and backup importer, and preserve replace-on-restore semantics — a backup import must not merge.
 - When changing garage updates: keep the `storage` bridge in `src/services/garage.ts` and have consumers listen to `garageChangedEvent()`; the two-tab regression test is `syncs a rename and notes save to another open tab`.
+- When changing Recall Watch updates: keep the `storage` bridge in `src/services/recallWatch.ts` and have consumers listen to `recallWatchChangedEvent()`; the two-tab regression test is `syncs Recall Watch additions and removals across tabs`.
