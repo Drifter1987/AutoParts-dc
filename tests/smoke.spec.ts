@@ -958,6 +958,36 @@ test.describe('product safety and handoff layer', () => {
     expect(external).toEqual([]);
   });
 
+  test('keeps the Remove button tappable on mobile without enlarging it on desktop', async ({
+    page,
+  }) => {
+    await page.goto(`/vin?vin=${CIVIC_2020_VIN}`);
+    await page.getByRole('button', { name: 'Watch recalls' }).click();
+    await page.goto('/recall-center');
+
+    const remove = page.getByRole('button', { name: `Stop watching ${CIVIC_2020_VIN}` });
+    await expect(remove).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(remove).toHaveCSS('min-height', '44px');
+    const mobile = await remove.boundingBox();
+    expect(mobile?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect(mobile?.width ?? 0).toBeGreaterThanOrEqual(44);
+
+    // The 44 px rule is mobile-only, so both halves must revert on desktop: the
+    // button is back to its natural box (7 px padding + 1 px border each side
+    // plus a ~14.8 px line), about 30.8 px tall. The narrow window still covers
+    // the display-font fallback metrics CI renders.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(remove).toHaveCSS('min-height', 'auto');
+    await expect(remove).toHaveCSS('min-width', 'auto');
+    const desktop = await remove.boundingBox();
+    expect(desktop?.height ?? 0).toBeGreaterThan(29);
+    expect(desktop?.height ?? 0).toBeLessThan(33);
+    // Width is content-driven, so the mobile-only min-width must not change it.
+    expect(desktop?.width ?? 0).toBeCloseTo(mobile?.width ?? 0, 0);
+  });
+
   test('auto-rechecks saved vehicles and keeps new-campaign status until reviewed', async ({ page }) => {
     const recallPattern = /^https:\/\/api\.nhtsa\.gov\/recalls\//;
     await page.unroute(recallPattern);
