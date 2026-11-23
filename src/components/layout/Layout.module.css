@@ -243,11 +243,15 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .footerLinks {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
+  max-width: 100%;
 }
 
 .footerLinks a {
