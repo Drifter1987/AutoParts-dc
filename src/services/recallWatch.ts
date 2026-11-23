@@ -12,13 +12,13 @@ const CHANGE_EVENT = 'autoparts:recall-watch-changed';
 /** Mirror of the storage cap applied by write(). */
 export const RECALL_WATCH_MAX_WATCHES = 24;
 
-/** Shared failure copy for any Recall Watch write the browser refuses. */
+/** Shared failure copy for any Recall Checklist write the browser refuses. */
 export const RECALL_WATCH_WRITE_FAILED_MESSAGE =
-  'Could not update Recall Watch. Browser storage is unavailable or full.';
+  'Could not update Recall Checklist. Browser storage is unavailable or full.';
 
 /** Shown instead of silently dropping the oldest watch when the list is at its cap. */
 export const RECALL_WATCH_LIMIT_MESSAGE =
-  'Could not update Recall Watch. Remove a vehicle first; the watch list holds up to 24.';
+  'Could not update Recall Checklist. Remove a vehicle first; the checklist holds up to 24.';
 
 export type StoredWriteOutcome = 'saved' | 'rejected' | 'full';
 
@@ -246,7 +246,7 @@ export function recallWatchChangedEvent(): string {
 
 /**
  * Browsers fire `storage` only in the tabs that did not write. Bridge it to the
- * in-page event so Recall Watch consumers refresh regardless of which tab made
+ * in-page event so Recall Checklist consumers refresh regardless of which tab made
  * the change.
  */
 function onStorage(event: StorageEvent): void {

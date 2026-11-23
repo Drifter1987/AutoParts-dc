@@ -41,7 +41,9 @@ export default function GarageBackupPanel() {
       anchor.href = url;
       anchor.download = garageBackupFilename();
       anchor.click();
-      URL.revokeObjectURL(url);
+      // Let the browser start reading the blob before releasing its URL. Revoking
+      // in the same task can cancel the download under load.
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       setPreview(null);
       setFileName(null);
       setError(null);
@@ -102,13 +104,13 @@ export default function GarageBackupPanel() {
     : 'an unknown date';
 
   return (
-    <section className={`card ${styles.panel}`} aria-labelledby="garage-backup-title">
+    <div aria-labelledby="garage-backup-title">
       <div className={styles.panelHeader}>
         <div>
           <p className="eyebrow">Backup file</p>
-          <h2 id="garage-backup-title" className={styles.panelTitle}>
+          <h3 id="garage-backup-title" className={styles.panelTitle}>
             Back up and restore My Garage
-          </h2>
+          </h3>
         </div>
         <span className="badge badge-ice">This device only</span>
       </div>
@@ -218,6 +220,6 @@ export default function GarageBackupPanel() {
         numbers, plates, and any notes you have written, so store it like a document about your
         vehicles.
       </p>
-    </section>
+    </div>
   );
 }

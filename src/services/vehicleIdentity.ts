@@ -5,7 +5,7 @@
  * that shows the vehicle or talks about model-year recall data has to say that
  * a lookup was not run; otherwise an empty result reads as "zero campaigns".
  * These helpers keep that wording and decision identical across saved vehicles,
- * the fleet checker, the safety report, and Recall Watch.
+ * the fleet checker, the safety report, and the Recall Checklist.
  */
 
 export const MODEL_DATA_UNAVAILABLE = 'Model data not available for this market';

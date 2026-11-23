@@ -89,38 +89,98 @@
   flex-wrap: wrap;
 }
 
-.scopeNote {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+.reportSummary {
   margin-bottom: var(--space-5);
-  border: 1px solid var(--border-amber);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--amber-glow);
-  color: var(--text-secondary);
-  font-size: 0.84rem;
-  line-height: 1.6;
+  background: var(--bg-surface);
 }
 
-.scopeIcon {
-  color: var(--amber);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.scopeNote strong {
+.summaryTitle {
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
-.scopeNote p {
-  margin-top: var(--space-1);
+.summaryList {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
-.scopeNote a {
+.summaryRow {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.summaryRow:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.summaryRow dt {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.summaryRow dd {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.summaryYes {
+  color: var(--success);
+}
+
+.summaryNo,
+.summaryNotRun {
+  color: var(--warning);
+}
+
+.reportSummary a,
+.matchDetails a {
   color: var(--ice);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.matchDetails {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.matchDetails summary {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.matchDetails summary:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
+.matchDetails[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+.matchDetails p {
+  margin-top: var(--space-2);
 }
 
 .sectionStack {
@@ -148,7 +208,8 @@
 }
 
 .reportFooter a:hover,
-.scopeNote a:hover {
+.reportSummary a:hover,
+.matchDetails a:hover {
   color: var(--ice);
 }
 
@@ -166,8 +227,13 @@
     justify-content: center;
   }
 
-  .scopeNote {
+  .reportSummary {
     padding: var(--space-4);
+  }
+
+  .summaryRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }
 
@@ -197,7 +263,8 @@
   .title,
   .trim,
   .vinLine code,
-  .scopeNote strong {
+  .reportSummary strong,
+  .matchDetails summary {
     color: #111 !important;
   }
 
@@ -210,8 +277,11 @@
   .vinLine span,
   .timestamp,
   .timestampDivider,
-  .scopeNote,
-  .scopeNote p,
+  .reportSummary,
+  .reportSummary dt,
+  .reportSummary dd,
+  .matchDetails,
+  .matchDetails p,
   .reportFooter {
     color: #333 !important;
   }
@@ -224,13 +294,15 @@
     display: none !important;
   }
 
-  .scopeNote {
+  .reportSummary,
+  .matchDetails {
     border: 1px solid #999;
     background: #f5f5f5;
     break-inside: avoid;
   }
 
-  .scopeNote a,
+  .reportSummary a,
+  .matchDetails a,
   .reportFooter a {
     color: #0645ad !important;
   }
@@ -278,10 +350,6 @@
 
   .report :global(article) {
     break-inside: avoid;
-  }
-
-  .report :global(details:not([open]) > *:not(summary)) {
-    display: block !important;
   }
 
   .sectionStack {

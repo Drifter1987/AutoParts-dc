@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { FileText, ShieldAlert, Upload } from 'lucide-react';
 import {
   decodeFleetRows,
@@ -8,11 +8,7 @@ import {
   type FleetImportPlan,
   type FleetSheetPreview,
 } from '../../services/garageFleetImport';
-import {
-  GARAGE_MAX_VEHICLES,
-  garageChangedEvent,
-  getGarageVehicles,
-} from '../../services/garage';
+import { GARAGE_MAX_VEHICLES } from '../../services/garage';
 import { trackEvent } from '../../services/telemetry';
 import styles from '../../styles/features.module.css';
 
@@ -25,14 +21,7 @@ export default function GarageFleetImportPanel() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [count, setCount] = useState(() => getGarageVehicles().length);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const refresh = () => setCount(getGarageVehicles().length);
-    window.addEventListener(garageChangedEvent(), refresh);
-    return () => window.removeEventListener(garageChangedEvent(), refresh);
-  }, []);
 
   const clearResult = () => {
     setPreview(null);
@@ -129,7 +118,7 @@ export default function GarageFleetImportPanel() {
       }
       setMessage(sentences.join(' ') || 'No vehicles were imported.');
 
-      trackEvent('garage_fleet_imported', {
+      trackEvent('garage_import', {
         parsed: preview.rows.length,
         imported: result.imported,
         matched,
@@ -156,13 +145,13 @@ export default function GarageFleetImportPanel() {
   const matched = plan ? plan.updateRows.length + plan.repairRows.length : 0;
 
   return (
-    <section className={`card ${styles.panel}`} aria-labelledby="garage-fleet-import-title">
+    <div aria-labelledby="garage-fleet-import-title">
       <div className={styles.panelHeader}>
         <div>
-          <p className="eyebrow">Bulk add</p>
-          <h2 id="garage-fleet-import-title" className={styles.panelTitle}>
+          <p className="eyebrow">Fleet sheet</p>
+          <h3 id="garage-fleet-import-title" className={styles.panelTitle}>
             Import a fleet sheet
-          </h2>
+          </h3>
         </div>
         <span className="badge badge-ice">CSV · TSV · Markdown</span>
       </div>
@@ -303,10 +292,9 @@ WAUZZZFJ2S1000156,Q3 1.5 R4110 A7,AU336050265,IN-R3478`}
       )}
 
       <p className={styles.panelMeta} style={{ marginTop: 'var(--space-3)' }}>
-        {count} of {GARAGE_MAX_VEHICLES} garage spaces used. The sheet is read in this browser;
-        new VINs are sent to NHTSA for decoding, and no fleet file is uploaded. VINs, fleet numbers,
-        and plates are stored only in this browser.
+        The sheet is read in this browser; new VINs are sent to NHTSA for decoding, and no fleet
+        file is uploaded. VINs, fleet numbers, and plates are stored only in this browser.
       </p>
-    </section>
+    </div>
   );
 }

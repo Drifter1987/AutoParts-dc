@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Zap, Database, Box, Globe } from 'lucide-react';
+import { ArrowRight, Zap, ShieldCheck, Box, HardDrive } from 'lucide-react';
 import { catalogApi } from '../services/api';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { CIVIC_2020, getPartCount } from '../services/parts';
@@ -13,12 +13,37 @@ const BRANDS = (brandsData as { brands: Brand[] }).brands;
 const BRAND_COUNT = BRANDS.length;
 const MODEL_COUNT = BRANDS.reduce((total, brand) => total + brand.models.length, 0);
 const LIVE_PARTS_COUNT = getPartCount(CIVIC_2020);
+const ASSEMBLY_COUNT = CIVIC_2020.assemblies.length;
 
 const FEATURES = [
-  { icon: <Zap size={20} />, title: 'VIN Decoder', desc: 'Instant year, make, model, engine, and trim identification via NHTSA — no account needed', href: '/vin' },
-  { icon: <Database size={20} />, title: 'Brand & Model Catalog', desc: `${BRAND_COUNT} active brands, ${MODEL_COUNT} models, and EPA-sourced engine options; the 2020 Civic parts slice is live`, href: '/catalog' },
-  { icon: <Box size={20} />, title: '2D Exploded Diagram', desc: 'Numbered, keyboard-accessible hotspots linked to the Civic parts list', href: '/catalog/honda/civic/2020' },
-  { icon: <Globe size={20} />, title: 'Global Coverage', desc: 'European, Japanese, American, Korean, Chinese, Indian, and Vietnamese brands in the catalog', href: '/catalog' },
+  {
+    icon: <Zap size={20} />,
+    status: 'Live',
+    title: 'VIN Decoder',
+    desc: 'Year, make, model, engine, and trim from NHTSA vPIC. No account needed.',
+    href: '/vin',
+  },
+  {
+    icon: <ShieldCheck size={20} />,
+    status: 'Live',
+    title: 'VIN Safety Report',
+    desc: 'Model-year recalls, complaints, investigations, and a VIN-specific NHTSA check link.',
+    href: '/vin',
+  },
+  {
+    icon: <Box size={20} />,
+    status: 'Live',
+    title: '2020 Civic Parts',
+    desc: `One published vehicle: ${ASSEMBLY_COUNT} assemblies and ${LIVE_PARTS_COUNT} representative OEM-reference parts. Verify with a dealer.`,
+    href: '/catalog/honda/civic/2020',
+  },
+  {
+    icon: <HardDrive size={20} />,
+    status: 'On this device',
+    title: 'My Garage & Checklist',
+    desc: 'Save vehicles, notes, and a recall checklist in localStorage. No account, cloud sync, or background monitoring.',
+    href: '/garage',
+  },
 ];
 
 export default function HomePage() {
@@ -27,8 +52,8 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   usePageMetadata(
-    'AutoParts — VIN Decoder & Vehicle Catalog',
-    'Decode a VIN free and explore vehicle specifications and parts catalogs for automotive brands.',
+    'AutoParts — VIN Decoder & Safety Report',
+    'Decode a VIN with NHTSA, check model-year recalls and complaints, and browse the published 2020 Honda Civic parts slice.',
     {
       canonicalPath: '/',
       jsonLd: {
@@ -72,15 +97,16 @@ export default function HomePage() {
       <section className={styles.hero}>
         <div className={`container ${styles.heroInner}`}>
           <div className={styles.heroContent}>
-            <p className="eyebrow">Proprietary · Free VIN Decoder · No Account Required</p>
+            <p className="eyebrow">Live NHTSA data · On-device tools · No account</p>
             <h1 className={styles.heroTitle}>
-              Find the part that fits<br />
-              <span className={styles.heroAccent}>your vehicle</span>
+              Know the vehicle<br />
+              <span className={styles.heroAccent}>behind the VIN</span>
             </h1>
             <p className={styles.heroSub}>
-              Decode a VIN with the free NHTSA database, then explore the live 2020 Honda Civic
-              parts slice. The catalog covers {BRAND_COUNT} active brands, {MODEL_COUNT} models,
-              and their EPA-sourced engine options.
+              Decode a VIN with NHTSA, check model-year recalls and complaints, and browse the
+              published 2020 Honda Civic parts slice. Catalog metadata lists {BRAND_COUNT} brands
+              and {MODEL_COUNT.toLocaleString()} models; only the Civic has published parts (
+              {LIVE_PARTS_COUNT}).
             </p>
             <div className={styles.heroCTA}>
               <Link to="/vin" className="btn btn-primary">
@@ -95,9 +121,9 @@ export default function HomePage() {
           {/* Stats */}
           <div className={styles.heroStats}>
             {[
-              { value: BRAND_COUNT, label: 'Brands' },
-              { value: MODEL_COUNT, label: 'Models' },
-              { value: LIVE_PARTS_COUNT, label: 'Live parts' },
+              { value: 1, label: 'Vehicle with parts' },
+              { value: LIVE_PARTS_COUNT, label: 'Published parts' },
+              { value: ASSEMBLY_COUNT, label: 'Assemblies' },
               { value: 'Free', label: 'No account' },
             ].map((s, i) => (
               <div key={i} className={styles.heroStat}>
@@ -118,6 +144,9 @@ export default function HomePage() {
             {FEATURES.map((f, i) => (
               <Link key={i} to={f.href} className={`card ${styles.featureCard}`}>
                 <div className={styles.featureIcon}>{f.icon}</div>
+                <span className={`badge ${f.status === 'Live' ? 'badge-success' : 'badge-ice'} ${styles.featureStatus}`}>
+                  {f.status}
+                </span>
                 <h3 className={styles.featureTitle}>{f.title}</h3>
                 <p className={styles.featureDesc}>{f.desc}</p>
                 <span className={styles.featureArrow}>→</span>
@@ -132,7 +161,7 @@ export default function HomePage() {
         <div className="container">
           <div className={styles.sectionHeader}>
             <div>
-              <p className="eyebrow">Featured Vehicles</p>
+              <p className="eyebrow">Catalog metadata</p>
               <h2 className={styles.sectionTitle}>Popular Models</h2>
             </div>
             <Link to="/catalog" className="btn btn-ghost">
@@ -189,35 +218,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Phase Roadmap ── */}
-      <section className={styles.roadmap}>
-        <div className="container">
-          <p className="eyebrow" style={{ textAlign: 'center', marginBottom: '8px' }}>Development Roadmap</p>
-          <h2 className={styles.sectionTitle} style={{ textAlign: 'center', marginBottom: '32px' }}>
-            Building in public, phase by phase
-          </h2>
-          <div className={styles.phaseList}>
-            {[
-              { n: 1, name: 'VIN Decoder & Vehicle Lookup', done: true },
-              { n: 2, name: 'Parts Catalog — 2020 Civic Vertical Slice', done: false, status: 'Slice live' },
-              { n: 3, name: '2D Exploded Diagrams', done: false, status: 'Slice live' },
-              { n: 4, name: '3D Exploded Views (Three.js + glTF)', done: false },
-              { n: 5, name: 'Smart Search, Compatibility & AI', done: false },
-              { n: 6, name: 'User Accounts & Marketplace', done: false },
-              { n: 7, name: 'Scale catalog data & licensed diagrams', done: false },
-            ].map(p => (
-              <div key={p.n} className={`${styles.phase} ${p.done ? styles.phaseDone : ''}`}>
-                <span className={styles.phaseNum}>
-                  {p.done ? '✓' : `0${p.n}`}
-                </span>
-                <span className={styles.phaseName}>{p.name}</span>
-                {p.done && <span className="badge badge-success">Live</span>}
-                {!p.done && 'status' in p && p.status && <span className="badge badge-amber">{p.status}</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

@@ -67,12 +67,12 @@ export default function RecallsPanel({ result, reportMode = false }: RecallsPane
           checkedAt: new Date().toISOString(),
           error: false,
         });
-        trackEvent('recalls_loaded', { vin: result.vin, count: data.length });
+        trackEvent('recalls_loaded', { count: data.length });
       })
       .catch(() => {
         if (!cancelled) {
           setState({ key, recalls: null, checkedAt: null, error: true });
-          trackEvent('recalls_failed', { vin: result.vin });
+          trackEvent('recalls_failed');
         }
       });
 

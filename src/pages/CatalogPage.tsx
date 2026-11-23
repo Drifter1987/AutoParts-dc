@@ -29,7 +29,7 @@ export default function CatalogPage() {
         {
           '@type': 'CollectionPage',
           name: 'AutoParts Vehicle Catalog',
-          description: 'Brand and model preview with a live 2020 Honda Civic parts slice.',
+          description: 'Brand and model metadata with the published 2020 Honda Civic parts slice.',
         },
       ],
     },
@@ -90,14 +90,15 @@ export default function CatalogPage() {
       <div className="container">
         {/* Header */}
         <div className={styles.pageHeader}>
-          <p className="eyebrow">Catalog Preview</p>
+          <p className="eyebrow">Catalog metadata</p>
           <h1 className={styles.title}>Browse by Brand</h1>
           <p className={styles.subtitle}>
             <RollingNumber value={brandCount} /> brands · <RollingNumber value={modelCount} /> models indexed
           </p>
           <p className={styles.subtitle} style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-            This is a brand, model, and engine catalog, not a complete parts catalog. Parts data is
-            live for the 2020 Honda Civic; other models are being added in later slices.
+            This is brand, model, and engine metadata, not a parts catalog. The only published parts
+            data is the 2020 Honda Civic: 4 assemblies and 36 representative OEM-reference parts.
+            Other models have no parts data.
           </p>
           <p className={styles.catalogNote}>
             {SEED.meta?.coverage} Source: {SEED.meta?.source}. {SEED.meta?.caveat}
@@ -106,10 +107,11 @@ export default function CatalogPage() {
 
         <div className={styles.liveSlice}>
           <div>
-            <p className="eyebrow">Live vertical slice</p>
+            <p className="eyebrow">Published parts coverage</p>
             <h2 className={styles.liveTitle}>2020 Honda Civic</h2>
             <p className={styles.liveText}>
-              4 assemblies · 36 OEM-reference parts · fitment notes · exploded diagram
+              One vehicle · 4 assemblies · 36 representative OEM-reference parts · fitment notes ·
+              diagram
             </p>
           </div>
           <div className={styles.liveActions}>

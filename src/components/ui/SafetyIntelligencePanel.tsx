@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, ArrowUpRight, FileWarning, MessageSquareWarning, SearchCheck } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, MessageSquareWarning, SearchCheck } from 'lucide-react';
 import { getSafetyIntelligence, type SafetyIntelligence } from '../../services/safety';
 import RollingNumber from './RollingNumber';
 import type { VINDecodeResult } from '../../types';
@@ -86,7 +86,7 @@ export default function SafetyIntelligencePanel({
         </div>
       )}
 
-      <div className={styles.grid3}>
+      <div className={styles.grid2}>
         <article className={styles.subcard}>
           <p className={styles.subcardTitle}>
             <MessageSquareWarning size={15} /> Consumer complaints
@@ -229,27 +229,6 @@ export default function SafetyIntelligencePanel({
             style={{ display: 'inline-flex', gap: 4, marginTop: 'var(--space-2)', fontSize: '0.78rem' }}
           >
             How NHTSA investigations work <ArrowUpRight size={12} />
-          </a>
-        </article>
-
-        <article className={styles.subcard}>
-          <p className={styles.subcardTitle}>
-            <FileWarning size={15} /> Manufacturer communications
-          </p>
-          <span className={styles.metric}>—</span>
-          <p className={styles.metricLabel}>Bulk dataset only</p>
-          <p className={styles.muted} style={{ marginTop: 'var(--space-3)' }}>
-            Dealer bulletins and manufacturer communications are published through NHTSA’s bulk
-            dashboard. No live communication records are connected in this build.
-          </p>
-          <a
-            className={styles.link}
-            href="https://data.transportation.gov/stories/s/3pds-7tk9"
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: 'inline-flex', gap: 4, marginTop: 'var(--space-3)', fontSize: '0.78rem' }}
-          >
-            NHTSA communications dashboard <ArrowUpRight size={12} />
           </a>
         </article>
       </div>

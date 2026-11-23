@@ -147,6 +147,10 @@
   border: 1px solid var(--border-amber);
 }
 
+.featureStatus {
+  align-self: flex-start;
+}
+
 .featureTitle {
   font-size: 1rem;
   font-weight: 700;
@@ -326,65 +330,4 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-}
-
-/* ── Roadmap ──────────────────────────────────────────────────────────── */
-.roadmap {
-  padding: var(--space-16) 0;
-  border-top: 1px solid var(--border);
-}
-
-.phaseList {
-  max-width: 680px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.phase {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
-
-.phase:last-child {
-  border-bottom: none;
-}
-
-.phase:hover {
-  background: var(--bg-elevated);
-}
-
-.phaseDone {
-  background: rgba(74, 222, 128, 0.03);
-}
-
-.phaseNum {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  width: 28px;
-  flex-shrink: 0;
-}
-
-.phaseDone .phaseNum {
-  color: var(--success);
-  font-weight: 700;
-}
-
-.phaseName {
-  flex: 1;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.phaseDone .phaseName {
-  color: var(--text-primary);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, ExternalLink, Info, Printer } from 'lucide-react';
+import { ArrowLeft, Clock, ExternalLink, Printer } from 'lucide-react';
 import VehicleCard from './VehicleCard';
 import RecallsPanel from './RecallsPanel';
 import SafetyIntelligencePanel from './SafetyIntelligencePanel';
@@ -36,6 +36,7 @@ export default function VINSafetyReport({
   cachedAt,
 }: VINSafetyReportProps) {
   const [generatedAt] = useState(() => new Date());
+  const [matchDetailsOpen, setMatchDetailsOpen] = useState(false);
   const identity = getVehicleIdentity(result);
   const identityComplete = hasCompleteVehicleIdentity(result);
   const lookupScope = getRecallLookupScope(result);
@@ -57,6 +58,16 @@ export default function VINSafetyReport({
   useEffect(() => {
     document.body.classList.add('vin-report-print');
     return () => document.body.classList.remove('vin-report-print');
+  }, []);
+
+  useEffect(() => {
+    const printMedia = window.matchMedia('print');
+    const openForPrint = () => {
+      if (printMedia.matches) setMatchDetailsOpen(true);
+    };
+    openForPrint();
+    printMedia.addEventListener('change', openForPrint);
+    return () => printMedia.removeEventListener('change', openForPrint);
   }, []);
 
   return (
@@ -110,13 +121,19 @@ export default function VINSafetyReport({
             type="button"
             className="btn btn-primary"
             onClick={() => {
-              trackEvent('vin_report_print', { vin: result.vin });
+              trackEvent('vin_report_print');
               window.print();
             }}
           >
             <Printer size={15} /> Print / save PDF
           </button>
-          <ShareButton className="btn btn-ghost" label="Share report" title={shareTitle} text={shareText} />
+          <ShareButton
+            className="btn btn-ghost"
+            label="Share report"
+            title={shareTitle}
+            text={shareText}
+            eventName="vin_report_share"
+          />
           <Link
             to={`/vin?vin=${encodeURIComponent(result.vin)}`}
             className="btn btn-ghost"
@@ -126,43 +143,105 @@ export default function VINSafetyReport({
         </div>
       </header>
 
-      <aside className={styles.scopeNote} aria-label="What is VIN-specific in this report">
-        <Info size={18} className={styles.scopeIcon} />
-        <div>
-          <strong>What is VIN-specific in this report?</strong>
-          <p>
-            The decoded specifications and the{' '}
-            <a href={`https://www.nhtsa.gov/recalls?vin=${encodeURIComponent(result.vin)}`} target="_blank" rel="noreferrer">
-              NHTSA VIN lookup
-            </a>{' '}
-            are specific to this vehicle&apos;s VIN.{' '}
-            {lookupScope === 'model-year' ? (
-              <>
-                The recall campaign list below is matched by model year, make, and model —
-                NHTSA&apos;s public API does not return whether a campaign is open or already
-                repaired on this VIN. Confirm open status and remedy eligibility with NHTSA or a
-                dealer. Consumer complaints and investigations are also matched by model year,
-                make, and model — they are model-level context and are not confirmed recalls for
-                this VIN.
-              </>
-            ) : lookupScope === 'inferred-model' ? (
-              <>
-                This vehicle&apos;s model was inferred from its VIN pattern, so AutoParts did not
-                run a model-year recall, complaint, or investigation lookup; NHTSA&apos;s public
-                data covers the US market. Confirm open status and remedy eligibility for this
-                VIN with NHTSA or a dealer.
-              </>
-            ) : (
-              <>
-                This VIN decoded without a model year, make, and model for its market, so
-                AutoParts did not run a model-year recall, complaint, or investigation lookup.
-                There is no campaign list below to match to this vehicle. Confirm open status and
-                remedy eligibility for this VIN with NHTSA or a dealer.
-              </>
-            )}
-          </p>
-        </div>
-      </aside>
+      <section className={styles.reportSummary} aria-labelledby="report-summary-title">
+        <h2 id="report-summary-title" className={styles.summaryTitle}>
+          What this report can tell you
+        </h2>
+        <dl className={styles.summaryList}>
+          <div className={styles.summaryRow}>
+            <dt>VIN-specific specifications</dt>
+            <dd>
+              <strong className={styles.summaryYes}>Yes</strong> — decoded from NHTSA vPIC for
+              this VIN.
+            </dd>
+          </div>
+          <div className={styles.summaryRow}>
+            <dt>Model-year recall campaigns</dt>
+            <dd>
+              {lookupScope === 'model-year' ? (
+                <>
+                  <strong className={styles.summaryYes}>Yes</strong> — model-year lookup ran;
+                  results appear below.
+                </>
+              ) : (
+                <>
+                  <strong className={styles.summaryNotRun}>Not run</strong> — no model-year recall
+                  lookup ran for this VIN.
+                </>
+              )}
+            </dd>
+          </div>
+          <div className={styles.summaryRow}>
+            <dt>VIN-specific open-recall status</dt>
+            <dd>
+              <strong className={styles.summaryNo}>No</strong> — confirm open status at the{' '}
+              <a
+                href={`https://www.nhtsa.gov/recalls?vin=${encodeURIComponent(result.vin)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                VIN-specific NHTSA lookup
+              </a>
+              .
+            </dd>
+          </div>
+          <div className={styles.summaryRow}>
+            <dt>Complaints and investigations</dt>
+            <dd>
+              {lookupScope === 'model-year' ? (
+                <>
+                  <strong>Model-level context</strong> — matched by year, make, and model, not
+                  VIN-specific.
+                </>
+              ) : (
+                <>
+                  <strong className={styles.summaryNotRun}>Not run</strong> — no complaint or
+                  investigation lookup ran for this VIN.
+                </>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <details
+        className={styles.matchDetails}
+        open={matchDetailsOpen}
+        onToggle={event => setMatchDetailsOpen(event.currentTarget.open)}
+      >
+        <summary>How this report is matched</summary>
+        <p>
+          The decoded specifications and the{' '}
+          <a href={`https://www.nhtsa.gov/recalls?vin=${encodeURIComponent(result.vin)}`} target="_blank" rel="noreferrer">
+            NHTSA VIN lookup
+          </a>{' '}
+          are specific to this vehicle&apos;s VIN.{' '}
+          {lookupScope === 'model-year' ? (
+            <>
+              The recall campaign list below is matched by model year, make, and model —
+              NHTSA&apos;s public API does not return whether a campaign is open or already
+              repaired on this VIN. Confirm open status and remedy eligibility with NHTSA or a
+              dealer. Consumer complaints and investigations are also matched by model year,
+              make, and model — they are model-level context and are not confirmed recalls for
+              this VIN.
+            </>
+          ) : lookupScope === 'inferred-model' ? (
+            <>
+              This vehicle&apos;s model was inferred from its VIN pattern, so AutoParts did not
+              run a model-year recall, complaint, or investigation lookup; NHTSA&apos;s public
+              data covers the US market. Confirm open status and remedy eligibility for this
+              VIN with NHTSA or a dealer.
+            </>
+          ) : (
+            <>
+              This VIN decoded without a model year, make, and model for its market, so
+              AutoParts did not run a model-year recall, complaint, or investigation lookup.
+              There is no campaign list below to match to this vehicle. Confirm open status and
+              remedy eligibility for this VIN with NHTSA or a dealer.
+            </>
+          )}
+        </p>
+      </details>
 
       <div className={styles.sectionStack}>
         <VehicleCard result={result} catalogBrands={catalogBrands} reportMode />
@@ -188,15 +267,15 @@ export default function VINSafetyReport({
             </li>
             <li>
               {lookupScope === 'model-year'
-                ? 'Save this VIN to Recall Watch to recheck model-year campaigns on a later visit, and share this report with a seller or mechanic.'
+                ? 'Add this VIN to your Recall Checklist to recheck model-year campaigns on a later visit, and share this report with a seller or mechanic.'
                 : lookupScope === 'inferred-model'
-                  ? 'Save this VIN to Recall Watch to keep a VIN-specific NHTSA link; US-market rechecks stay off while the model is inferred from the VIN. Share this report with a seller or mechanic.'
-                  : 'Save this VIN to Recall Watch to keep a VIN-specific NHTSA link; model-year rechecks stay off until a year, make, and model are available. Share this report with a seller or mechanic.'}
+                  ? 'Add this VIN to your Recall Checklist to keep a VIN-specific NHTSA link; US-market rechecks stay off while the model is inferred from the VIN. Share this report with a seller or mechanic.'
+                  : 'Add this VIN to your Recall Checklist to keep a VIN-specific NHTSA link; model-year rechecks stay off until a year, make, and model are available. Share this report with a seller or mechanic.'}
             </li>
           </ol>
           <div className={`${styles.noPrint} ${featureStyles.actions}`} data-report-action style={{ marginTop: 'var(--space-4)' }}>
             <RecallWatchButton result={result} reportMode />
-            <Link to="/recall-center" className="btn btn-ghost">Open Recall Watch</Link>
+            <Link to="/recall-center" className="btn btn-ghost">Open Recall Checklist</Link>
             <Link to={`/vin?vin=${encodeURIComponent(result.vin)}`} className="btn btn-ghost">
               Back to VIN result
             </Link>

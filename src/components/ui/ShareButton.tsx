@@ -9,6 +9,8 @@ interface ShareButtonProps {
   title?: string;
   /** Optional share-sheet body so the shared text matches the identity shown. */
   text?: string;
+  /** Override the event name when this share is a funnel step. */
+  eventName?: string;
 }
 
 export default function ShareButton({
@@ -16,6 +18,7 @@ export default function ShareButton({
   className,
   title,
   text,
+  eventName,
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
@@ -28,12 +31,12 @@ export default function ShareButton({
           ...(text ? { text } : {}),
           url,
         });
-        trackEvent('share_sheet_opened', { path: window.location.pathname });
+        trackEvent(eventName ?? 'share_sheet_opened', { path: window.location.pathname });
         return;
       }
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      trackEvent('share_link_copied', { path: window.location.pathname });
+      trackEvent(eventName ?? 'share_link_copied', { path: window.location.pathname });
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setCopied(false);

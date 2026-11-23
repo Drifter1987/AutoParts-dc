@@ -36,7 +36,6 @@ export default function DemandCapture({
     event.preventDefault();
     setError(null);
     const form = new FormData(event.currentTarget);
-    const email = String(form.get('email') || '').trim();
     const vin = String(form.get('vin') || '').trim().toUpperCase();
     const year = String(form.get('year') || '').trim();
     const make = String(form.get('make') || '').trim();
@@ -59,7 +58,6 @@ export default function DemandCapture({
     }
 
     const row = saveDemand({
-      email,
       vin,
       year,
       make,
@@ -68,7 +66,7 @@ export default function DemandCapture({
       context,
     });
     setReference(row.id);
-    trackEvent('coverage_demand_captured', { context, make: row.make, model: row.model });
+    trackEvent('coverage_demand_captured', { context });
   };
 
   return (
@@ -106,16 +104,6 @@ export default function DemandCapture({
       ) : (
         <form onSubmit={submit} noValidate>
           <div className={styles.fieldGrid} data-compact={compact ? 'true' : undefined}>
-            <label className={styles.field}>
-              <span className={styles.label}>Email (optional)</span>
-              <input
-                className={styles.input}
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-              />
-            </label>
             <label className={styles.field}>
               <span className={styles.label}>VIN (optional if using year/make/model)</span>
               <input

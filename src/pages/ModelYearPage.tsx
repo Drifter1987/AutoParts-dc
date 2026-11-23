@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -106,11 +106,17 @@ export default function ModelYearPage() {
     if (vehicle) {
       trackEvent('catalog_model_view', {
         vehicle: vehicleLabel,
-        vin: vin || undefined,
         assemblies: vehicle.assemblies.length,
       });
     }
-  }, [vehicle, vehicleLabel, vin]);
+  }, [vehicle, vehicleLabel]);
+
+  const deadEndReported = useRef('');
+  useEffect(() => {
+    if (vehicle || !uncoveredLabel || deadEndReported.current === uncoveredLabel) return;
+    deadEndReported.current = uncoveredLabel;
+    trackEvent('catalog_dead_end', { vehicle: uncoveredLabel });
+  }, [vehicle, uncoveredLabel]);
 
   const setParam = (key: string, value: string) => {
     setSearchParams(
@@ -183,7 +189,7 @@ export default function ModelYearPage() {
             <div className={styles.badgeRow}>
               <span className="badge badge-amber">{vehicle.catalog.generation}</span>
               <span className="badge badge-ice">{vehicle.catalog.market} market</span>
-              <span className="badge badge-success">VIN-ready fitment</span>
+              <span className="badge badge-success">Fitment notes included</span>
               {vin && <span className="badge badge-ice">VIN context preserved</span>}
             </div>
           </div>

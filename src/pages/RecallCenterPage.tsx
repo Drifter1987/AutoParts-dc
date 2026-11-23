@@ -76,14 +76,14 @@ export default function RecallCenterPage() {
   const inFlight = useRef(new Set<string>());
 
   usePageMetadata(
-    'Recall Watch — AutoParts',
+    'Recall Checklist — AutoParts',
     'Recheck saved VINs for new model-year recall campaigns, confirm open recalls at NHTSA, mark self-reported repairs, and keep a campaign history.',
     {
       canonicalPath: '/recall-center',
       noindex: true,
       jsonLd: {
         '@type': 'WebPage',
-        name: 'Recall Watch',
+        name: 'Recall Checklist',
         description: 'A local recall action center for saved vehicles.',
       },
     },
@@ -151,8 +151,7 @@ export default function RecallCenterPage() {
           newCampaigns: result.newCampaigns,
         },
       }));
-      trackEvent('recall_watch_checked', {
-        vin: watch.vin,
+      trackEvent('checklist_recheck', {
         campaigns: recalls.length,
         newCampaigns: result.newCampaigns.length,
         automatic,
@@ -228,12 +227,13 @@ export default function RecallCenterPage() {
       <div className="container">
         <div className={styles.hero}>
           <div className={styles.heroCopy}>
-            <p className="eyebrow">Safety retention loop</p>
-            <h1 className={styles.title}>Recall Watch</h1>
+            <p className="eyebrow">Local recall workspace</p>
+            <h1 className={styles.title}>Recall Checklist</h1>
             <p className={styles.subtitle}>
-              Keep a VIN on your watchlist, recheck model-year campaigns, and keep a clear record of
-              what you marked as repaired. Rechecks run automatically every 5 minutes while this
-              page is open and when you return to it. This is browser-only; no email or SMS is sent.
+              Keep a VIN on your local checklist, recheck model-year campaigns, and keep a clear
+              record of what you marked as repaired. Rechecks run automatically every 5 minutes
+              while this page is open and when you return to it. This is browser-only; no email,
+              SMS, or background monitoring is connected.
             </p>
           </div>
           <div className={styles.actions}>
@@ -267,11 +267,11 @@ export default function RecallCenterPage() {
             <div className={styles.panelHeader}>
               <div>
                 <p className="eyebrow">No watched vehicles</p>
-                <h2 className={styles.panelTitle}>Save a VIN to start a safety watch</h2>
+                <h2 className={styles.panelTitle}>Save a VIN to start a recall checklist</h2>
               </div>
             </div>
             <p className={styles.muted}>
-              Decode a VIN, choose <strong>Watch recalls</strong>, and this page will keep the
+              Decode a VIN, choose <strong>Add to checklist</strong>, and this page will keep the
               model-year campaign history for that vehicle. Your garage is a good place to find
               saved VINs.
             </p>
@@ -291,14 +291,14 @@ export default function RecallCenterPage() {
                 <section key={watch.vin} className={`card ${styles.panel}`} aria-labelledby={`watch-${watch.vin}`}>
                   <div className={styles.panelHeader}>
                     <div>
-                      <p className="eyebrow">Watched VIN</p>
+                      <p className="eyebrow">Checklist VIN</p>
                       <h2 id={`watch-${watch.vin}`} className={styles.panelTitle}>
                         {hasCompleteVehicleIdentity(watch) ? identity : MODEL_DATA_UNAVAILABLE}
                       </h2>
                       <p className={styles.watchVin}>{watch.vin}</p>
                     </div>
                     <div className={styles.actions}>
-                      <span className="badge badge-ice"><Bell size={12} /> Recall watch</span>
+                      <span className="badge badge-ice"><Bell size={12} /> Checklist</span>
                       <span className={`badge ${lookupScope !== 'model-year' || watch.newCampaigns.length ? 'badge-amber' : 'badge-success'}`}>
                         {lookupScope !== 'model-year'
                           ? 'Lookup skipped'
@@ -315,7 +315,7 @@ export default function RecallCenterPage() {
                           reportWrite(watch.vin, removeRecallWatch(watch.vin));
                           setWatches(getRecallWatches());
                         }}
-                        aria-label={`Stop watching ${watch.vin}`}
+                        aria-label={`Remove ${watch.vin} from the checklist`}
                       >
                         <Trash2 size={13} /> Remove
                       </button>
@@ -364,7 +364,7 @@ export default function RecallCenterPage() {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Find a dealer <ExternalLink size={13} />
+                      Search the web for a dealer <ExternalLink size={13} />
                     </a>
                     <button
                       type="button"
@@ -496,7 +496,6 @@ export default function RecallCenterPage() {
                                   setWatches(getRecallWatches());
                                   if (saved) {
                                     trackEvent('recall_repair_marked', {
-                                      vin: watch.vin,
                                       campaign: recall.campaignNumber,
                                     });
                                   }

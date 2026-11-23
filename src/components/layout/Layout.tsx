@@ -14,7 +14,7 @@ export default function Layout() {
   const location = useLocation();
 
   useEffect(() => {
-    trackEvent('page_view', { path: location.pathname, search: location.search });
+    trackEvent('page_view', { path: location.pathname });
   }, [location.pathname, location.search]);
 
   const lastPathname = useRef(location.pathname);
@@ -181,7 +181,7 @@ export default function Layout() {
             <NavLink to="/vin" onClick={() => setMenuOpen(false)}>VIN Decoder</NavLink>
             <NavLink to="/catalog" onClick={() => setMenuOpen(false)}>Catalog</NavLink>
             <NavLink to="/garage" onClick={() => setMenuOpen(false)}>My Garage</NavLink>
-            <NavLink to="/recall-center" onClick={() => setMenuOpen(false)}>Recall Watch</NavLink>
+            <NavLink to="/recall-center" onClick={() => setMenuOpen(false)}>Recall Checklist</NavLink>
             <NavLink to="/fleet" onClick={() => setMenuOpen(false)}>Fleet VIN Checker</NavLink>
             <NavLink to="/tools" onClick={() => setMenuOpen(false)}>Safety Tools</NavLink>
             <form
@@ -226,9 +226,10 @@ export default function Layout() {
             Representative parts catalog · frontend-only · VIN data from NHTSA
           </span>
           <div className={styles.footerLinks}>
-            <Link to="/recall-center">Recall Watch</Link>
+            <Link to="/recall-center">Recall Checklist</Link>
             <Link to="/fleet">Fleet</Link>
             <Link to="/tools">Tools</Link>
+            <Link to="/tools#privacy">Privacy</Link>
             <a href="https://github.com/len-golani/AutoParts-fb/issues" target="_blank" rel="noreferrer">Issues</a>
             <a href="https://github.com/len-golani/AutoParts-fb" target="_blank" rel="noreferrer">Source</a>
           </div>

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 import { stubGoogleFonts } from './google-fonts-stubs';
-import { stubNhtsa } from './nhtsa-stubs';
+import { stubNhtsa, stubNhtsaFetch } from './nhtsa-stubs';
 
 const RENAULT_VIN = 'VF1RFB00X12345678';
 const CIVIC_VIN = '2HGFC2F59LH500001';
@@ -120,6 +120,20 @@ test.describe('Incomplete year/make/model handling', () => {
   test('the fleet table and CSV report a skipped lookup as not run, never as zero campaigns', async ({
     page,
   }) => {
+    await stubNhtsaFetch(page, {
+      [RENAULT_VIN]: {
+        Make: '',
+        Model: '',
+        ModelYear: '2001',
+        ErrorCode: '0',
+      },
+      [CIVIC_VIN]: {
+        Make: 'HONDA',
+        Model: 'Civic',
+        ModelYear: '2020',
+        ErrorCode: '0',
+      },
+    });
     await page.goto('/fleet');
     await page
       .getByLabel(/VIN list, CSV, or auction export/i)
@@ -161,6 +175,16 @@ test.describe('Incomplete year/make/model handling', () => {
       '2001 — Model data not available for this market',
     );
     await expect(page.getByText(/Model data not available for this market/).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What this report can tell you' })).toBeVisible();
+    const reportSummary = page.getByRole('region', { name: 'What this report can tell you' });
+    await expect(
+      reportSummary.getByText(/no model-year recall lookup ran for this VIN/i),
+    ).toBeVisible();
+    await expect(
+      reportSummary.getByText(/no complaint or investigation lookup ran for this VIN/i),
+    ).toBeVisible();
+    await expect(reportSummary.getByText('Not run', { exact: true }).first()).toBeVisible();
+    await page.getByText('How this report is matched', { exact: true }).click();
     await expect(
       page.getByText(/did not run a model-year recall, complaint, or investigation lookup/i),
     ).toBeVisible();
@@ -180,6 +204,12 @@ test.describe('Incomplete year/make/model handling', () => {
     await expect(
       page.getByText(/Model inferred from VIN positions 7–8 \(GY\)\./).first(),
     ).toBeVisible();
+    const reportSummary = page.getByRole('region', { name: 'What this report can tell you' });
+    await expect(
+      reportSummary.getByText(/no model-year recall lookup ran for this VIN/i),
+    ).toBeVisible();
+    await expect(reportSummary.getByText('Not run', { exact: true }).first()).toBeVisible();
+    await page.getByText('How this report is matched', { exact: true }).click();
     await expect(
       page.getByText(/model was inferred from its VIN pattern/i).first(),
     ).toBeVisible();
@@ -205,7 +235,7 @@ test.describe('Incomplete year/make/model handling', () => {
     expect(reportShare.text).toContain('no model-year recall lookup ran');
   });
 
-  test('Recall Watch labels and skips checks for incomplete or inferred identities', async ({
+  test('Recall Checklist labels and skips checks for incomplete or inferred identities', async ({
     page,
   }) => {
     await page.addInitScript(
@@ -264,5 +294,71 @@ test.describe('Incomplete year/make/model handling', () => {
     await expect(
       page.getByText(/campaigns? returned for the model year; not VIN-specific/i),
     ).toHaveCount(0);
+  });
+
+  test('background checklist checks skip incomplete identities without recording a check', async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ key }: { key: string }) => {
+        const base = {
+          trim: null,
+          engine: null,
+          addedAt: '2026-11-22T12:00:00.000Z',
+          notificationsOptIn: false,
+          lastCheckedAt: null,
+          campaignHistory: [],
+          newCampaigns: [],
+          newCampaignsDetectedAt: null,
+          completedRepairs: [],
+        };
+        localStorage.setItem(
+          key,
+          JSON.stringify([
+            {
+              ...base,
+              vin: 'VF1RFB00X12345678',
+              year: '2001',
+              make: '',
+              model: '',
+              model_source: null,
+            },
+            {
+              ...base,
+              vin: 'WAUZZZGY5VA000149',
+              year: '2027',
+              make: 'AUDI',
+              model: 'A3/S3/RS 3',
+              model_source: 'vin-pattern',
+            },
+          ]),
+        );
+      },
+      { key: 'autoparts.recall-watch.v1' },
+    );
+
+    let recallRequests = 0;
+    await page.route(/^https:\/\/api\.nhtsa\.gov\/recalls\//, route => {
+      recallRequests += 1;
+      return route.fulfill({ json: { Count: 0, results: [] } });
+    });
+
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.waitForTimeout(300);
+
+    // A skipped lookup must not hit NHTSA or stamp lastCheckedAt.
+    expect(recallRequests).toBe(0);
+    const checkedAt = await page.evaluate(
+      key =>
+        (
+          JSON.parse(localStorage.getItem(key) || '[]') as {
+            lastCheckedAt: string | null;
+          }[]
+        ).map(watch => watch.lastCheckedAt),
+      'autoparts.recall-watch.v1',
+    );
+    expect(checkedAt).toEqual([null, null]);
   });
 });

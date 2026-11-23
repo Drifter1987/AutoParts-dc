@@ -9,7 +9,7 @@ import {
 /**
  * File backup for My Garage.
  *
- * The transfer code in garageTransfer.ts is a merge: it adds vehicles and keeps
+ * Backup restore is a merge: it adds vehicles and keeps
  * the newest save per VIN. A backup is the opposite — restoring replaces the
  * garage with the file's contents, so the previous state comes back exactly,
  * including names, notes, and save dates.

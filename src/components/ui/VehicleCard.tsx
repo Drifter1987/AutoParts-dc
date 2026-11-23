@@ -207,7 +207,6 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
               className="btn btn-primary"
               onClick={() =>
                 trackEvent('vin_catalog_handoff', {
-                  vin: result.vin,
                   vehicle: getVehicleLabel(catalogVehicle),
                 })
               }
@@ -220,7 +219,6 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
               className="btn btn-primary"
               onClick={() =>
                 trackEvent('vin_coverage_request', {
-                  vin: result.vin,
                   vehicle: `${previewYear} ${catalogBrand?.name} ${previewModel?.name}`,
                 })
               }

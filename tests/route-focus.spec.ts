@@ -40,12 +40,12 @@ test.describe('SPA route focus', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Browse by Brand' })).toBeFocused();
   });
 
-  test('moves focus to the Recall Watch heading after footer navigation', async ({ page }) => {
+  test('moves focus to the Recall Checklist heading after footer navigation', async ({ page }) => {
     await page.keyboard.press('Tab');
-    await pressUntilFocused(page, 'Recall Watch', 'Shift+Tab');
+    await pressUntilFocused(page, 'Recall Checklist', 'Shift+Tab');
     await page.keyboard.press('Enter');
 
     await expect(page).toHaveURL(/\/recall-center$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Recall Watch' })).toBeFocused();
+    await expect(page.getByRole('heading', { level: 1, name: 'Recall Checklist' })).toBeFocused();
   });
 });

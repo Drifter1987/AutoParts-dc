@@ -178,17 +178,17 @@ export default function VINDecoderPage() {
       cacheVinResult(data);
       lastUrlVin.current = vin;
       setSearchParams(isReport ? { vin, report: '1' } : { vin });
-      trackEvent('vin_decode_success', { vin, year: data.year, make: data.make, model: data.model });
+      trackEvent('vin_decode_success', { year: data.year, make: data.make, model: data.model });
     } catch (err: unknown) {
       const cached = getCachedVinResult(vin);
       if (cached) {
         setResult(cached.result);
         setCachedAt(cached.savedAt);
         setError('NHTSA is unavailable right now — showing the last locally cached decode for this VIN.');
-        trackEvent('vin_decode_cached_fallback', { vin });
+        trackEvent('vin_decode_cached_fallback');
       } else {
         setError(err instanceof Error ? err.message : 'Failed to decode VIN');
-        trackEvent('vin_decode_failure', { vin, message: err instanceof Error ? err.message : 'unknown' });
+        trackEvent('vin_decode_failure', { source: 'nhtsa_decode' });
       }
     } finally {
       setLoading(false);
@@ -439,7 +439,7 @@ export default function VINDecoderPage() {
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
               <RecallWatchButton result={result} />
               <Link to="/recall-center" className="btn btn-ghost">
-                Open Recall Watch
+                Open Recall Checklist
               </Link>
               <Link
                 to={`/vin?vin=${encodeURIComponent(result.vin)}&report=1`}

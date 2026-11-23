@@ -1,18 +1,24 @@
+import {
+  sanitizeTelemetryProperties,
+  type TelemetryProperties,
+} from './telemetrySanitizer';
+
+export type { TelemetryProperties } from './telemetrySanitizer';
+
 /**
  * Privacy-friendly telemetry boundary.
  *
- * Set VITE_TELEMETRY_ENDPOINT to a collector that accepts POSTed JSON. Without an
- * endpoint events stay local (debug builds only) and errors still surface in the
- * console, so the app never invents a third-party account or sends data silently.
+ * Set VITE_TELEMETRY_ENDPOINT to a collector that accepts POSTed JSON. Without
+ * an endpoint nothing leaves the browser; development builds log locally so
+ * the event wiring is still visible. Every payload goes through the shared
+ * sanitizer, so VINs, email addresses, plates, notes, raw queries, and raw
+ * error text never reach a collector.
  */
-type TelemetryValue = string | number | boolean | null | undefined;
-
-export interface TelemetryProperties {
-  [key: string]: TelemetryValue;
-}
-
 const endpoint = import.meta.env.VITE_TELEMETRY_ENDPOINT?.trim();
 let initialized = false;
+
+/** True when this build has a collector configured. */
+export const telemetryEndpointConfigured = Boolean(endpoint);
 
 function post(payload: Record<string, unknown>): void {
   if (!endpoint) return;
@@ -33,11 +39,17 @@ function post(payload: Record<string, unknown>): void {
   }
 }
 
+function safePath(): string | undefined {
+  return sanitizeTelemetryProperties({ path: window.location.pathname }).path as
+    | string
+    | undefined;
+}
+
 export function trackEvent(event: string, properties: TelemetryProperties = {}): void {
   const payload = {
     event,
-    properties,
-    path: window.location.pathname,
+    properties: sanitizeTelemetryProperties(properties),
+    path: safePath(),
     timestamp: new Date().toISOString(),
   };
 
@@ -50,13 +62,22 @@ export function trackEvent(event: string, properties: TelemetryProperties = {}):
 
 export function reportError(error: unknown, context: TelemetryProperties = {}): void {
   const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack : undefined;
+  const errorType = error instanceof Error ? error.name : typeof error;
+  const safeContext = sanitizeTelemetryProperties(context);
 
   if (import.meta.env.DEV) {
-    console.error('[telemetry:error]', message, context);
+    console.error('[telemetry:error]', message, safeContext);
   }
 
-  post({ kind: 'error', message, stack, context, path: window.location.pathname });
+  // Keep production errors observable without shipping raw error text, which
+  // can contain VINs, paths, or user input.
+  post({
+    kind: 'error',
+    errorType,
+    messageLength: message.length,
+    context: safeContext,
+    path: safePath(),
+  });
 }
 
 /** Register global error hooks once. */

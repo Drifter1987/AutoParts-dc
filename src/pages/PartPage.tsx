@@ -13,7 +13,6 @@ import {
   getVehiclePath,
 } from '../services/parts';
 import { trackEvent } from '../services/telemetry';
-import CommercialPanel from '../components/ui/CommercialPanel';
 import CopyButton from '../components/ui/CopyButton';
 import FitmentSupport from '../components/ui/FitmentSupport';
 import ShareButton from '../components/ui/ShareButton';
@@ -107,15 +106,6 @@ export default function PartPage() {
       : fitment.tone === 'error'
         ? styles.fitmentError
         : styles.fitmentWarning;
-  const commercialVehicle = {
-    vin,
-    year: vehicle.catalog.year,
-    make: vehicle.catalog.brand,
-    model: vehicle.catalog.model,
-    engine: engine || null,
-    trim: trim || null,
-  };
-
   const relatedParts = vehicle.assemblies
     .find(assembly => assembly.slug === part.assemblySlug)
     ?.parts.filter(item => item.slug !== part.slug)
@@ -155,7 +145,7 @@ export default function PartPage() {
               />
             </div>
             <div className={styles.badgeRow}>
-              <span className="badge badge-amber">{part.confidence} confidence</span>
+              <span className="badge badge-amber">Representative catalog · {part.confidence} confidence</span>
               <span className="badge badge-ice">{part.fitment.engines.join(' / ')}</span>
               {vin && <span className="badge badge-success">VIN context: {vin}</span>}
             </div>
@@ -286,15 +276,6 @@ export default function PartPage() {
               )) : <span className={styles.provenance}>No interchange references listed.</span>}
             </div>
           </div>
-        </div>
-
-        <div style={{ marginTop: 'var(--space-5)' }}>
-          <CommercialPanel
-            partNumber={part.oemNumber}
-            partName={part.name}
-            vehicle={commercialVehicle}
-            fitmentConfirmed={fitment.tone === 'success'}
-          />
         </div>
 
         <section className={`card ${styles.detailCard}`} style={{ marginTop: 'var(--space-5)' }} aria-labelledby="provenance-title">

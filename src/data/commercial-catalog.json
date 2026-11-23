@@ -1,8 +1,0 @@
-{
-  "version": "1.0.0",
-  "source": null,
-  "updatedAt": null,
-  "disclosure": "Commercial fitment and availability feeds are not connected in this build. Offers appear only after an exact part number is matched to a licensed fitment record and the catalog fitment check passes.",
-  "fitmentRecords": [],
-  "offers": []
-}

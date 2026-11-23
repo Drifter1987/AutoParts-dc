@@ -6,7 +6,6 @@ import {
   Play,
   Printer,
   ShieldAlert,
-  Terminal,
 } from 'lucide-react';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import {
@@ -22,21 +21,9 @@ import {
   hasCompleteVehicleIdentity,
 } from '../services/vehicleIdentity';
 import { trackEvent } from '../services/telemetry';
-import CopyButton from '../components/ui/CopyButton';
 import RollingNumber from '../components/ui/RollingNumber';
 import type { FleetRow } from '../types';
 import styles from '../styles/features.module.css';
-
-const SAMPLE_API = `POST /v1/fleet/recalls
-Content-Type: application/json
-
-{
-  "vins": ["2HGFC2F59LH500001"],
-  "includeCampaigns": true
-}
-
-// Response status: "not-configured" until the
-// server-side fleet API is deployed.`;
 
 export default function FleetPage() {
   const [input, setInput] = useState('');
@@ -104,7 +91,9 @@ export default function FleetPage() {
     anchor.href = url;
     anchor.download = `autoparts-fleet-recall-check-${new Date().toISOString().slice(0, 10)}.csv`;
     anchor.click();
-    URL.revokeObjectURL(url);
+    // Let the browser start reading the blob before releasing its URL. Revoking
+    // in the same task can cancel the download under load.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const completeRows = rows.filter(row => row.status === 'complete');
@@ -120,7 +109,7 @@ export default function FleetPage() {
       <div className="container">
         <div className={styles.hero}>
           <div className={styles.heroCopy}>
-            <p className="eyebrow">B2B safety workflow</p>
+            <p className="eyebrow">Fleet safety workflow</p>
             <h1 className={styles.title}>Fleet VIN recall checker</h1>
             <p className={styles.subtitle}>
               Paste a list or upload a CSV of up to {FLEET_MAX_VINS} VINs. The checker resolves
@@ -293,30 +282,6 @@ export default function FleetPage() {
             </p>
           </section>
         )}
-
-        <section className={`card ${styles.panel}`} style={{ marginTop: 'var(--space-5)' }} aria-labelledby="fleet-api-title">
-          <div className={styles.panelHeader}>
-            <div>
-              <p className="eyebrow">Integration contract</p>
-              <h2 id="fleet-api-title" className={styles.panelTitle}>B2B API</h2>
-            </div>
-            <span className="badge badge-ice"><Terminal size={12} /> Not deployed</span>
-          </div>
-          <p className={styles.muted}>
-            The UI is ready for a server-side fleet endpoint, but this static build has no API
-            host or credentials. The contract below is the boundary a shop, dealer, or fleet
-            integration would call; do not treat it as a live endpoint.
-          </p>
-          <pre
-            className={styles.status}
-            style={{ overflowX: 'auto', marginTop: 'var(--space-3)', whiteSpace: 'pre-wrap', display: 'block' }}
-          >
-            <code>{SAMPLE_API}</code>
-          </pre>
-          <div className={styles.formActions}>
-            <CopyButton value={SAMPLE_API} label="Copy API contract" className="btn btn-ghost" />
-          </div>
-        </section>
       </div>
     </div>
   );

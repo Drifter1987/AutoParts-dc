@@ -159,49 +159,7 @@ export interface GarageVehicle {
   savedAt: string;
 }
 
-// ─── Commercial Fitment & Availability ───────────────────────────────────────
-
-export type CommercialConfidence = 'verified' | 'reference' | 'unconfirmed';
-
-export interface CommercialFitmentRecord {
-  id: string;
-  partNumber: string;
-  brand: string;
-  years: number[];
-  make: string;
-  model: string;
-  engines: string[];
-  trims: string[];
-  source: string;
-  updatedAt: string;
-  confidence: CommercialConfidence;
-  aces?: Record<string, unknown>;
-  pies?: Record<string, unknown>;
-}
-
-export interface AvailabilityOffer {
-  id: string;
-  partNumber: string;
-  retailer: string;
-  price: number | null;
-  currency: string;
-  inStock: boolean | null;
-  url: string;
-  fitmentConfidence: 'confirmed' | 'conditional';
-  disclosure: string;
-  updatedAt: string;
-}
-
-export interface CommercialDataBundle {
-  version: string;
-  source: string | null;
-  updatedAt: string | null;
-  disclosure: string;
-  fitmentRecords: CommercialFitmentRecord[];
-  offers: AvailabilityOffer[];
-}
-
-// ─── Recall Watch ────────────────────────────────────────────────────────────
+// ─── Recall Checklist ────────────────────────────────────────────────────────
 
 export interface RecallCampaignSeen {
   campaignNumber: string;
@@ -259,47 +217,12 @@ export interface SafetyInvestigation {
   url: string;
 }
 
-export interface ManufacturerCommunication {
-  id: string;
-  communicationType: string;
-  date: string;
-  summary: string;
-}
-
-// ─── Dealer / Fitment Handoff ────────────────────────────────────────────────
-
-export interface FitmentVerificationRequest {
-  id: string;
-  createdAt: string;
-  vin: string;
-  partNumber: string;
-  partName: string;
-  vehicle: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone?: string;
-  notes?: string;
-  status: 'local-queue';
-}
-
-export interface FitmentCorrectionReport {
-  id: string;
-  createdAt: string;
-  vin: string;
-  partNumber: string;
-  partName: string;
-  vehicle: string;
-  reason: string;
-  details: string;
-  status: 'local-audit';
-}
-
 // ─── Demand Capture ──────────────────────────────────────────────────────────
 
 export interface DemandRequest {
   id: string;
   createdAt: string;
-  email: string;
+
   vin: string;
   year: string;
   make: string;

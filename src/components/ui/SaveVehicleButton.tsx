@@ -35,14 +35,14 @@ export default function SaveVehicleButton({ result, className }: SaveVehicleButt
         return;
       }
       setError(null);
-      trackEvent('garage_vehicle_removed', { vin: result.vin });
+      trackEvent('garage_vehicle_removed');
     } else {
       if (!saveVehicle(result)) {
         setError(GARAGE_WRITE_FAILED_MESSAGE);
         return;
       }
       setError(null);
-      trackEvent('garage_vehicle_saved', { vin: result.vin, year: result.year, make: result.make });
+      trackEvent('garage_vehicle_saved', { year: result.year, make: result.make });
     }
   };
 

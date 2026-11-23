@@ -4,6 +4,21 @@ import { stubNhtsa } from "./nhtsa-stubs";
 
 const PAGES_URL = "https://len-golani.github.io/AutoParts-fb/";
 const BASE_PATH = "/AutoParts-fb/";
+
+// The live Pages build now carries the P1-04 copy. Set
+// PAGES_EXPECT_PRE_P1_04=1 only when checking an older deployment.
+const EXPECT_PRE_P1_04 = process.env.PAGES_EXPECT_PRE_P1_04 === "1";
+const HOME_METADATA = EXPECT_PRE_P1_04
+  ? {
+      title: "AutoParts — VIN Decoder & Vehicle Catalog",
+      description:
+        "Decode a VIN free and explore vehicle specifications and parts catalogs for automotive brands.",
+    }
+  : {
+      title: "AutoParts — VIN Decoder & Safety Report",
+      description:
+        "Decode a VIN with NHTSA, check model-year recalls and complaints, and browse the published 2020 Honda Civic parts slice.",
+    };
 const CIVIC_2020_VIN = "2HGFC2F59LH500001";
 
 test.describe("deployed GitHub Pages", () => {
@@ -61,14 +76,21 @@ test.describe("deployed GitHub Pages", () => {
 
 test.describe("prerendered metadata", () => {
   test("serves route metadata without JavaScript", async ({ browser }) => {
+    if (EXPECT_PRE_P1_04) {
+      test.info().annotations.push({
+        type: "environment",
+        description:
+          "Checking an older deployed Pages build; Home metadata expects the pre-P1-04 copy.",
+      });
+    }
+
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     const routes = [
       {
         path: "",
-        title: "AutoParts — VIN Decoder & Vehicle Catalog",
-        description:
-          "Decode a VIN free and explore vehicle specifications and parts catalogs for automotive brands.",
+        title: HOME_METADATA.title,
+        description: HOME_METADATA.description,
       },
       {
         path: "vin",

@@ -105,7 +105,7 @@ export default function BrandPage() {
             <p className="eyebrow">{brand.origin} Manufacturer</p>
             <h1 className={styles.brandName}>{brand.name}</h1>
             <p className={styles.brandMeta}>
-              <RollingNumber value={brand.models.length} /> models available
+              <RollingNumber value={brand.models.length} /> models in catalog metadata
             </p>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function BrandPage() {
 
         {/* Models grid */}
         <div className={styles.sectionTitle}>
-          <p className="eyebrow">Available Models</p>
+          <p className="eyebrow">Models in metadata</p>
           <h2 className={styles.h2}>{brand.name} Lineup</h2>
         </div>
 
@@ -154,7 +154,7 @@ export default function BrandPage() {
                   {live ? (
                     <span className={styles.partsLive}>Parts live</span>
                   ) : (
-                    <span className={styles.comingSoon}>Preview</span>
+                    <span className={styles.comingSoon}>No parts data</span>
                   )}
                 </div>
 
@@ -212,7 +212,7 @@ export default function BrandPage() {
                 key={model.slug}
                 to={previewPath}
                 className={`card ${styles.modelCard}`}
-                aria-label={`View parts coverage for ${previewYear} ${brand.name} ${model.name}`}
+                aria-label={`View parts status for ${previewYear} ${brand.name} ${model.name}`}
               >
                 {card}
               </Link>

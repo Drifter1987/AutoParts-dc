@@ -39,9 +39,9 @@ export default function RecallWatchButton({
         to="/recall-center"
         className={className}
         data-report-action={reportMode ? '' : undefined}
-        aria-label={`Recall watch is active for ${result.vin}`}
+        aria-label={`Recall checklist is active for ${result.vin}`}
       >
-        <BellRing size={14} /> Watching recalls
+        <BellRing size={14} /> On your checklist
       </Link>
     );
   }
@@ -61,10 +61,10 @@ export default function RecallWatchButton({
           }
           setError(null);
           setWatching(true);
-          trackEvent('recall_watch_added', { vin: result.vin });
+          trackEvent('recall_watch_added');
         }}
       >
-        <BellPlus size={14} /> Watch recalls
+        <BellPlus size={14} /> Add to checklist
       </button>
       {error && (
         <p

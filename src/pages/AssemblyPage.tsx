@@ -111,8 +111,8 @@ export default function AssemblyPage() {
             <p className={styles.subtitle}>{assembly.summary}</p>
             <div className={styles.badgeRow}>
               <span className="badge badge-amber">{assembly.parts.length} parts</span>
-              <span className="badge badge-ice">Exploded diagram</span>
-              <span className="badge badge-success">OEM references</span>
+              <span className="badge badge-ice">Representative diagram</span>
+              <span className="badge badge-success">Reference numbers</span>
             </div>
           </div>
           <div className={styles.pageActions}>

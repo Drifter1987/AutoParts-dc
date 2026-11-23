@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { getRecallsForVehicle } from '../services/recalls';
 import { getRecallWatches, recordRecallCheck } from '../services/recallWatch';
+import { getRecallLookupScope } from '../services/vehicleIdentity';
 
 const AUTO_RECHECK_MS = 5 * 60 * 1000;
 
@@ -9,8 +10,8 @@ interface RecallWatchdogProps {
 }
 
 /**
- * The Recall Watch page owns its own visible recheck loop. Everywhere else,
- * keep saved watches fresh in the background while the app is open.
+ * The Recall Checklist page owns its own visible recheck loop. Everywhere else,
+ * keep saved watches fresh while the app is open.
  */
 export default function RecallWatchdog({ pathname }: RecallWatchdogProps) {
   useEffect(() => {
@@ -23,6 +24,10 @@ export default function RecallWatchdog({ pathname }: RecallWatchdogProps) {
 
       void Promise.all(
         watches.map(async watch => {
+          // A model-year request for an incomplete or inferred identity comes
+          // back empty, which would read as "zero campaigns". Skip it entirely
+          // so lastCheckedAt is never advanced by a lookup that did not run.
+          if (getRecallLookupScope(watch) !== 'model-year') return;
           try {
             const recalls = await getRecallsForVehicle(watch);
             recordRecallCheck(watch, recalls);

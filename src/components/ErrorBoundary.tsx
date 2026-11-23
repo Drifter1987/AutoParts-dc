@@ -27,7 +27,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <p className="eyebrow">Something went wrong</p>
           <h1 style={{ margin: '8px 0 12px' }}>This page hit an unexpected fault.</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>
-            The error was reported to the app’s local telemetry boundary. Try reloading, or return
+            A privacy-safe error record was created without a VIN, email, or raw error text. Try reloading, or return
             to the catalog.
           </p>
           <button className="btn btn-primary" onClick={() => window.location.reload()}>

@@ -70,6 +70,48 @@
   letter-spacing: -0.02em;
 }
 
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin: var(--space-4) 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--amber);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.tabPanel {
+  padding-top: var(--space-1);
+}
+
 .panelMeta {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -467,6 +509,10 @@
   background: var(--amber-glow);
   border: 1px solid var(--border-amber);
   border-radius: var(--radius-md);
+}
+
+.toolStatus {
+  align-self: flex-start;
 }
 
 .toolTitle {

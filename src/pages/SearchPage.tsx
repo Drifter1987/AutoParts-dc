@@ -26,7 +26,7 @@ export default function SearchPage() {
 
   usePageMetadata(
     query ? `Parts Search: ${query} — AutoParts` : 'Parts Search — AutoParts',
-    'Search AutoParts by OEM number, part name, alias, or brand/model. Check fitment, compare supersessions, and copy part numbers.',
+    'Search the published 2020 Honda Civic parts slice by OEM number, part name, or alias, and search brand/model metadata separately.',
     {
       canonicalPath: '/search',
       jsonLd: {
@@ -40,14 +40,6 @@ export default function SearchPage() {
   useEffect(() => {
     catalogApi.getBrands().then(data => setBrands(data.brands)).catch(() => setBrands([]));
   }, []);
-
-  useEffect(() => {
-    if (!query) return;
-    const timer = window.setTimeout(() => {
-      trackEvent('parts_search', { query, vehicleFilter: vehicleFilter || 'all' });
-    }, 450);
-    return () => window.clearTimeout(timer);
-  }, [query, vehicleFilter]);
 
   const setQuery = (value: string) => {
     setSearchParams(
@@ -101,6 +93,18 @@ export default function SearchPage() {
       .slice(0, 8);
   }, [brands, query]);
 
+  useEffect(() => {
+    if (!query.trim()) return;
+    const timer = window.setTimeout(() => {
+      trackEvent('parts_search', {
+        queryLength: query.trim().length,
+        resultCount: partResults.length,
+        hasVehicleFilter: Boolean(vehicleFilter),
+      });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [query, vehicleFilter, partResults.length]);
+
   const hrefForPart = (part: { slug: string; assemblySlug?: string }) =>
     getPartPath(CIVIC_2020, part.assemblySlug || 'engine', part.slug, vin);
 
@@ -113,8 +117,8 @@ export default function SearchPage() {
             <h1 className={styles.title}>Find a part by number or name</h1>
             <p className={styles.subtitle}>
               Mechanics and parts-counter staff can start with an OEM number, supersession,
-              interchange reference, part name, or alias. Results keep the vehicle context in the
-              URL so you can share the exact lookup.
+              interchange reference, part name, or alias. Part results come from the published
+              36-part 2020 Civic slice; brand and model matches are catalog metadata only.
             </p>
           </div>
           <div className={styles.pageActions}>
@@ -204,7 +208,7 @@ export default function SearchPage() {
                     <p className="eyebrow">Parts</p>
                     <h2 id="part-results-title" className={styles.h2}>Matching part records</h2>
                   </div>
-                  <span className={styles.sectionMeta}>Click a part for fitment and provenance</span>
+                  <span className={styles.sectionMeta}>Published 2020 Civic slice · click for fitment and provenance</span>
                 </div>
                 <PartList parts={partResults} hrefForPart={hrefForPart} hasVin={Boolean(vin)} />
               </section>
@@ -217,6 +221,7 @@ export default function SearchPage() {
                     <p className="eyebrow">Brands & models</p>
                     <h2 id="brand-results-title" className={styles.h2}>Vehicle catalog matches</h2>
                   </div>
+                  <span className={styles.sectionMeta}>Metadata only</span>
                 </div>
                 <div className={styles.relatedGrid}>
                   {brandResults.map(brand => (

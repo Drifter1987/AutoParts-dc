@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { AUDI_FLEET_VINS } from './fleet-vins';
 
-interface DecodeFixture {
+export interface DecodeFixture {
   Make: string;
   Model: string;
   ModelYear: string;
@@ -167,6 +167,73 @@ const MODELS: Record<string, ModelFixture[]> = {
 
 function vinFromPath(pathname: string, endpoint: string): string {
   return pathname.split(`/${endpoint}/`)[1]?.split('/')[0]?.toUpperCase() ?? '';
+}
+
+/**
+ * Stub the NHTSA responses in the page instead of through Playwright routes.
+ *
+ * Under parallel load, route.fulfill can take longer than the app's 15-second
+ * fetch timeout, which turns a fleet check into an aborted-row error. Tests
+ * that assert finished fleet state use this direct fetch stub so the UI state
+ * is deterministic rather than timing-dependent.
+ */
+export async function stubNhtsaFetch(
+  page: Page,
+  fixtures: Record<string, Partial<DecodeFixture>>,
+): Promise<void> {
+  await page.addInitScript(
+    ({ decodeFixtures, emptyDecode }) => {
+      const originalFetch = window.fetch.bind(window);
+      const json = (body: unknown) =>
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+      window.fetch = async (input, init) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url;
+
+        if (url.includes('vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/')) {
+          const path = new URL(url).pathname;
+          const vin = path.split('/DecodeVinValues/')[1]?.split('/')[0]?.toUpperCase() ?? '';
+          const fixture = decodeFixtures[vin];
+          if (fixture) {
+            return json({
+              Count: 1,
+              Message: 'Results returned successfully',
+              Results: [{ ...emptyDecode, ...fixture }],
+            });
+          }
+        }
+
+        if (url.includes('api.nhtsa.gov/recalls/')) {
+          return json({
+            Count: 1,
+            Message: 'Results returned successfully',
+            results: [
+              {
+                Manufacturer: 'Honda (American Honda Motor Co.)',
+                NHTSACampaignNumber: '21V215000',
+                ReportReceivedDate: '25/03/2021',
+                Component: 'FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP',
+                Summary: 'The low-pressure fuel pump inside the fuel tank may fail.',
+                Consequence: 'Fuel pump failure can cause an engine stall while driving.',
+                Remedy: 'Honda will replace the fuel pump assembly free of charge.',
+              },
+            ],
+          });
+        }
+
+        return originalFetch(input, init);
+      };
+    },
+    { decodeFixtures: fixtures, emptyDecode: EMPTY_DECODE },
+  );
 }
 
 /** Intercept every NHTSA vPIC call the VIN page makes, including manual makes. */

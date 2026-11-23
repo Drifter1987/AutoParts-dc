@@ -1,7 +1,6 @@
 import type {
   SafetyComplaint,
   SafetyInvestigation,
-  ManufacturerCommunication,
   VINDecodeResult,
 } from '../types';
 
@@ -55,8 +54,6 @@ export interface SafetyIntelligence {
   investigationsCheckedAt: string | null;
   investigationsSource: string | null;
   investigationsUpdatedAt: string | null;
-  manufacturerCommunications: ManufacturerCommunication[];
-  communicationsStatus: 'not-configured';
   note: string;
 }
 
@@ -194,8 +191,6 @@ export async function getSafetyIntelligence(
       investigationsCheckedAt: null,
       investigationsSource: null,
       investigationsUpdatedAt: null,
-      manufacturerCommunications: [],
-      communicationsStatus: 'not-configured',
       note: 'NHTSA complaints and investigations are US-market data. This European VIN was decoded from its VIN pattern, so model-level US data was not queried.',
     };
   }
@@ -244,8 +239,6 @@ export async function getSafetyIntelligence(
     investigationsCheckedAt,
     investigationsSource,
     investigationsUpdatedAt,
-    manufacturerCommunications: [],
-    communicationsStatus: 'not-configured',
     note: 'Complaints and investigations are model-level signals, not VIN-specific defects or recall determinations. They are separate from the confirmed recall campaigns listed above.',
   };
 }
