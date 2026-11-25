@@ -16,6 +16,7 @@ const GaragePage = lazy(() => import('./pages/GaragePage'));
 const RecallCenterPage = lazy(() => import('./pages/RecallCenterPage'));
 const FleetPage = lazy(() => import('./pages/FleetPage'));
 const ToolsPage = lazy(() => import('./pages/ToolsPage'));
+const RoadmapPage = lazy(() => import('./pages/RoadmapPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/recall-center" element={<RecallCenterPage />} />
           <Route path="/fleet" element={<FleetPage />} />
           <Route path="/tools" element={<ToolsPage />} />
+          <Route path="/roadmap" element={<RoadmapPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

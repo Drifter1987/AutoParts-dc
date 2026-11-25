@@ -973,6 +973,12 @@ test.describe('page metadata', () => {
           'Front Brake Pad Set (OEM 45022-TBA-A00) for 2020 Honda Civic. Fitment notes, supersessions, interchange references, and provenance. Verify fitment with a dealer.',
       },
       {
+        path: '/roadmap',
+        title: 'Product Roadmap — AutoParts',
+        description:
+          'See what is live, what runs on this device, and which licensed parts, pricing, sync, monitoring, fleet API, extension, and payments features are coming soon.',
+      },
+      {
         path: '/not-a-real-page',
         title: 'Page Not Found — AutoParts',
         description:

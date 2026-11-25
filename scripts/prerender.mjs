@@ -69,6 +69,7 @@ const routes = [
   { path: "search", output: "search/index.html", waitFor: "h1" },
   { path: "garage", output: "garage/index.html", waitFor: "h1" },
   { path: "tools", output: "tools/index.html", waitFor: "h1" },
+  { path: "roadmap", output: "roadmap/index.html", waitFor: "h1" },
   { path: "recall-center", output: "recall-center/index.html", waitFor: "h1" },
   { path: "fleet", output: "fleet/index.html", waitFor: "h1" },
   { path: "not-a-real-page", output: "404.html", waitFor: "h1" },
@@ -134,6 +135,7 @@ try {
     ...brands.map((brand) => `catalog/${brand.slug}`),
     "search",
     "tools",
+    "roadmap",
     ...catalogRoutes,
   ];
 

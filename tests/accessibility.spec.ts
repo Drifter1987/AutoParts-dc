@@ -10,11 +10,13 @@ const CORE_ROUTES = [
   '/vin',
   '/catalog',
   '/catalog/honda/civic/2020',
+  '/catalog/honda/civic/2020/brakes/front-brake-pads',
   '/search?q=civic',
   '/garage',
   '/recall-center',
   '/fleet',
   '/tools',
+  '/roadmap',
 ];
 
 test.describe('core-route accessibility', () => {

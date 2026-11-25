@@ -219,6 +219,31 @@ export default function ToolsPage() {
           </div>
         </section>
 
+        <section
+          className={`card ${styles.panel}`}
+          style={{ marginTop: 'var(--space-6)' }}
+          aria-labelledby="roadmap-title"
+        >
+          <div className={styles.panelHeader}>
+            <div>
+              <p className="eyebrow">Product plan</p>
+              <h2 id="roadmap-title" className={styles.panelTitle}>
+                Every phase, including what is not connected
+              </h2>
+            </div>
+            <span className="badge badge-ice">3 phases</span>
+          </div>
+          <p className={styles.muted}>
+            The roadmap shows what is live, what stays on this device, and which licensed parts,
+            pricing, sync, monitoring, fleet API, extension, and payment features are coming soon.
+          </p>
+          <div className={styles.actions} style={{ marginTop: 'var(--space-4)' }}>
+            <Link to="/roadmap" className="btn btn-ghost">
+              Open the roadmap →
+            </Link>
+          </div>
+        </section>
+
         <section className={`card ${styles.panel}`} style={{ marginTop: 'var(--space-6)' }} aria-labelledby="data-layer-title">
           <div className={styles.panelHeader}>
             <div>

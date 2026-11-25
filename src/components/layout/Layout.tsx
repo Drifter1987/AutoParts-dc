@@ -1,5 +1,5 @@
 import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Wrench, BookOpen, Cpu, Menu, X, Bookmark, SlidersHorizontal } from 'lucide-react';
+import { Search, Wrench, BookOpen, Cpu, Menu, X, Bookmark, SlidersHorizontal, Compass } from 'lucide-react';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { trackEvent } from '../../services/telemetry';
 import RecallWatchdog from '../RecallWatchdog';
@@ -160,6 +160,15 @@ export default function Layout() {
               <SlidersHorizontal size={15} />
               Tools
             </NavLink>
+            <NavLink
+              to="/roadmap"
+              className={({ isActive }) =>
+                `${styles.navLink} ${isActive ? styles.navActive : ''}`
+              }
+            >
+              <Compass size={15} />
+              Roadmap
+            </NavLink>
           </nav>
 
           {/* Mobile menu toggle */}
@@ -184,6 +193,7 @@ export default function Layout() {
             <NavLink to="/recall-center" onClick={() => setMenuOpen(false)}>Recall Checklist</NavLink>
             <NavLink to="/fleet" onClick={() => setMenuOpen(false)}>Fleet VIN Checker</NavLink>
             <NavLink to="/tools" onClick={() => setMenuOpen(false)}>Safety Tools</NavLink>
+            <NavLink to="/roadmap" onClick={() => setMenuOpen(false)}>Roadmap</NavLink>
             <form
               onSubmit={handleQuickSearch}
               className={styles.mobileSearch}
@@ -229,6 +239,7 @@ export default function Layout() {
             <Link to="/recall-center">Recall Checklist</Link>
             <Link to="/fleet">Fleet</Link>
             <Link to="/tools">Tools</Link>
+            <Link to="/roadmap">Roadmap</Link>
             <Link to="/tools#privacy">Privacy</Link>
             <a href="https://github.com/len-golani/AutoParts-fb/issues" target="_blank" rel="noreferrer">Issues</a>
             <a href="https://github.com/len-golani/AutoParts-fb" target="_blank" rel="noreferrer">Source</a>
