@@ -15,6 +15,7 @@ import {
 import { trackEvent } from '../services/telemetry';
 import CopyButton from '../components/ui/CopyButton';
 import FitmentSupport from '../components/ui/FitmentSupport';
+import { formatFreshness, getRightsLabel } from '../services/provenance';
 import ShareButton from '../components/ui/ShareButton';
 import NotFoundPage from './NotFoundPage';
 import styles from '../styles/parts.module.css';
@@ -290,7 +291,9 @@ export default function PartPage() {
             </div>
             <div>
               <p className={styles.detailLabel}>Catalog last updated</p>
-              <p className={styles.detailValue}>{part.lastUpdated}</p>
+              <p className={styles.detailValue}>
+                {part.lastUpdated} · {formatFreshness(part.lastUpdated)}
+              </p>
             </div>
             <div>
               <p className={styles.detailLabel}>Record confidence</p>
@@ -299,6 +302,18 @@ export default function PartPage() {
             <div>
               <p className={styles.detailLabel}>Vehicle fitment scope</p>
               <p className={styles.detailValue}>{vehicleLabel} · {part.fitment.market} market</p>
+            </div>
+            <div>
+              <p className={styles.detailLabel}>Data rights</p>
+              <p className={styles.detailValue}>{getRightsLabel(vehicle.catalog.rights)}</p>
+            </div>
+            <div>
+              <p className={styles.detailLabel}>License</p>
+              <p className={styles.detailValue}>{vehicle.catalog.rights.license}</p>
+            </div>
+            <div>
+              <p className={styles.detailLabel}>Attribution</p>
+              <p className={styles.detailValue}>{vehicle.catalog.rights.attribution}</p>
             </div>
           </div>
           <p className={styles.provenance} style={{ marginTop: 'var(--space-4)' }}>

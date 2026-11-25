@@ -22,6 +22,7 @@ import {
   searchParts,
 } from '../services/parts';
 import { trackEvent } from '../services/telemetry';
+import { formatFreshness } from '../services/provenance';
 import PartList from '../components/ui/PartList';
 import ShareButton from '../components/ui/ShareButton';
 import NotFoundPage from './NotFoundPage';
@@ -387,8 +388,9 @@ export default function ModelYearPage() {
             <CircleHelp size={17} aria-hidden="true" />
             <span>
               Fitment is not a guarantee. {vehicle.catalog.source} · Last updated{' '}
-              <span className="mono">{vehicle.catalog.lastUpdated}</span> · Confidence:{' '}
-              <strong>{vehicle.catalog.confidence}</strong>. Always verify with an authorized
+              <span className="mono">{vehicle.catalog.lastUpdated}</span> (
+              {formatFreshness(vehicle.catalog.lastUpdated)}) · Confidence:{' '}
+              <strong>{vehicle.catalog.confidence}</strong>. Always verify with an authorized{' '}
               {vehicle.catalog.brand} dealer before ordering.
             </span>
           </div>
