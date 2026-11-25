@@ -102,11 +102,12 @@ This is the current route-level capability truth. Historical sections below may 
 | `/catalog/:brandSlug/:modelSlug/:year` | 2020 Civic: published 36-part representative slice; other vehicles: engine metadata and VIN link | Uncovered vehicles: coverage request saved locally | Parts, fitment, price/stock for unpublished vehicles |
 | `/catalog/:brandSlug/:modelSlug/:year/:assemblySlug` | Published 2020 Civic assembly record, fitment rules, representative diagram | Engine/trim selection in the URL | Licensed OEM data; price/stock; ordering |
 | `/catalog/:brandSlug/:modelSlug/:year/:assemblySlug/:partSlug` | Published 2020 Civic part record, fitment explanation, provenance | VIN/engine/trim context in the URL | Licensed OEM fitment; price/stock; dealer ordering |
-| `/search` | Searches the 36-part Civic slice; searches 63-brand metadata | No-match: coverage request saved locally | Parts outside the Civic slice |
+| `/search` | Ranked OEM/alias/name search over the 36-part Civic slice; vehicle, engine, trim, and fitment filtering; 63-brand metadata | No-match: coverage request saved locally | Parts outside the Civic slice |
 | `/garage` | NHTSA links from saved VINs | Garage, names, notes, fleet import, backup/restore in localStorage | Accounts/cloud sync; server backup |
 | `/recall-center` | NHTSA model-year campaigns; VIN-specific NHTSA links | Checklist, first-seen history, self-reported repairs, browser alerts | Email/SMS, background monitoring, VIN-specific open-recall status |
 | `/fleet` | NHTSA VIN identity and model-year campaign counts; CSV generated in the browser | VIN batch and CSV stay in this browser; nothing is uploaded | B2B API, server-side fleet storage, VIN-specific repair status |
-| `/tools` | Links to NHTSA tools and the published Civic slice | Local counts for Garage, Recall Checklist, and coverage requests | Commercial feed, price/stock, dealer routing, accounts |
+| `/tools` | Links to NHTSA tools and the published Civic slice | Local counts for Garage, Recall Checklist, coverage requests, fitment reports, and the combined feedback CSV | Commercial feed, price/stock, dealer routing, accounts |
+| `/roadmap` | Three-phase capability map with every live, on-device, and Coming soon feature | No stored data | Licensed coverage, pricing/stock, accounts/sync, background monitoring, fleet API, extension, checkout, observability |
 | `*` (404) | None | None | The requested page |
 
 **Caveat:** the 2020 Civic slice is representative development data, not licensed OEM data. “Live” here means shipped in this build, not a licensed feed.
@@ -449,7 +450,7 @@ the 15 write-durable. No commit, push, or deploy was performed.
 
 **P1-06 is complete.** The written posture is `docs/telemetry.md`: no collector by default; optional `VITE_TELEMETRY_ENDPOINT` sends sanitized JSON; the Tools page has a user-facing `#privacy` note and the footer links to it. All eight required funnel events are wired to their real actions: `vin_decode_success`, `vin_decode_failure`, `vin_report_print`, `vin_report_share`, `parts_search` (length + count), `catalog_dead_end`, `garage_import` counts, and `checklist_recheck` counts. `trackEvent` and `reportError` share `sanitizeTelemetryProperties`, and the error path sends only `errorType`, `messageLength`, sanitized context, and path. `tests/telemetry.spec.ts` captures actual payloads from decode failure/success, report print/share, search, catalog dead end, garage import, checklist recheck, and an unhandled error, then asserts no VIN, email, plate, note, raw query, or raw error text is present.
 
-- **P1-07 is open and needs the user's provider decision.** `docs/parts-data-spec.md` is drafted, but provider quotes/trial access from at least two providers and a provider selection are still required. No provider is chosen or implied.
+- **P1-07 decision package is ready; the licensing/provider decision is open.** `docs/parts-provider-evaluation.md` screens six candidates against the 36 anchors, records the licensing gate, and holds the fillable 36-vehicle checklist; `docs/parts-provider-rfq-email.md` is the send-ready RFQ and sample request. Of the six screened, only MOTOR Parts/AccuPI and Epicor Catalog publish OEM-numbered US light-duty coverage. Epicor's standard supplement bars consumer-facing use of MOTOR/Mitchell content and limits caching to 24 hours; MOTOR's standard DaaS terms exclude consumer-facing apps and its end-user terms are look-up-only, with per-OEM review requirements. No provider is contacted, licensed, or selected.
 
 ### 2026-11-23 — P1-08 Phase 1 verification and deployment
 
@@ -471,7 +472,19 @@ the 15 write-durable. No commit, push, or deploy was performed.
 - **Added:** one central telemetry sanitizer; all eight funnel events and the error boundary use it; `/tools#privacy` and the footer Privacy link state the no-collector-by-default posture.
 - **Deployment fix:** the new footer Privacy link pushed a non-wrapping footer row to 325 px inside a 288 px content box, so CI’s 320 px check measured a 341 px document. Footer links now wrap and the footer text is width-constrained (`65c4f7d`).
 
-**Remaining Phase 1 gate item:** P1-07 provider selection. `docs/parts-data-spec.md` has the 36-vehicle shortlist and required fields, but quotes/trial access from at least two providers and the selection remain the user’s decision. P1-08 stays `[~]` and Phase 2 does not start until that gate closes.
+**Remaining Phase 1 gate item:** P1-07 licensing/provider decision. `docs/parts-data-spec.md` has the 36-vehicle shortlist and required fields, but the licensing path, quotes, sample review, and selection remain the user’s decision; the decision package is ready in `docs/parts-provider-evaluation.md` and `docs/parts-provider-rfq-email.md`. P1-08 stays `[~]` and Phase 2 does not start until that gate closes.
+
+### 2026-11-23 — P1-07 decision package
+
+| Item | Result |
+|---|---|
+| `docs/parts-provider-evaluation.md` | Six candidates screened; MOTOR Parts/AccuPI and Epicor Catalog are the only two of the six with published OEM-numbered US light-duty sources. SEMA Data, Auto Care reference DBs, PartsTech and PartsLogic Connect are not primary catalog sources. |
+| `docs/parts-provider-rfq-email.md` | Send-ready RFQ with the 36-vehicle list, five-vehicle sample request, licensing questions first, and provider-specific blocks. |
+| 36-vehicle checklist | Fillable MOTOR/Epicor columns; restates the 25-vehicle gate and per-vehicle thresholds. |
+| Published cost floor | Auto Care VCdb **$3,218** member / **$7,021** non-member plus PAdb **$1,100** / **$2,300** at $0–5M revenue. Buys reference data, not parts. |
+| Licensing gate | Epicor supplement bans consumer-facing use of MOTOR/Mitchell content and caps caching at 24 hours; MOTOR DaaS terms exclude consumer-facing apps and its end-user terms are look-up-only; OEM reviews apply per make. |
+
+**P1-07 is not complete.** No provider has been contacted, no quote requested, no sample received, and no selection made. The next action is the repo owner's: send the RFQ and decide the licensing path (negotiated consumer license, business-facing pivot, brand-data alternative, or defer).
 
 ---
 
@@ -483,6 +496,7 @@ the 15 write-durable. No commit, push, or deploy was performed.
 - **European VIN fallback is a model-code table, not a licensed decoder.** It covers only `WAU`/`WUA` Audi VINs with `GY`, `FJ`, `FZ`, or `HC`; other European makes and model codes still return no model. `HC` is not in NHTSA's US Audi sheet, and the fleet's `E3 CUV` labels do not match a documented Audi model, so those rows decode as A2 e-tron with a verification note. VINs with no make/model (e.g. Renault `VF1RFB00X12345678`) are not guessed; they show the explicit market-data state and skip the model-year recall query.
 - **No European recall source.** For pattern-inferred European models, the app deliberately skips NHTSA's US-market recall and safety queries rather than presenting US campaigns as local ones.
 - **Representative Civic data:** 36 parts are for product development, not licensed OEM fitment. Keep the provenance disclaimer visible.
+- **Parts data licensing is unresolved.** Both OEM-data candidates publish terms built for business or per-lookup use, not a public static catalog. Epicor's supplement bans consumer-facing use of MOTOR/Mitchell content and offline storage beyond a 24-hour cache; MOTOR's DaaS terms exclude consumer-facing applications and require per-OEM review, with GM restricting use of its parts data to build a separate electronic catalog. Do not ingest or display licensed parts data until written consumer-redisplay and bulk-storage rights exist.
 - **Automated accessibility only.** Axe catches a subset; run NVDA/VoiceOver and keyboard-only smoke tests before claiming full WCAG conformance.
 - **No field performance data.** Bundle sizes are build measurements, not LCP/INP/CLS.
 - **No server-side rate limiting** because there is no server; NHTSA calls are direct and subject to its availability/CORS behavior.

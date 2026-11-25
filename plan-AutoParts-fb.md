@@ -4,7 +4,7 @@
 **Baseline app commit:** `13d0eed` (deployed; Pages run `45067537086`)  
 **Baseline grade:** C+ overall — strong engineering, weak parts depth, too many empty surfaces  
 **Product goal:** a trustworthy VIN-first way to identify a vehicle, check its safety record, and find the part that fits.  
-**Execution status (2026-11-23):** P1-01 through P1-06 complete and verified; P1-08 verification, tracker update, and deployment are done, leaving only P1-07's provider selection open on the Phase 1 gate. `docs/parts-data-spec.md` holds the 36-vehicle draft; no provider is chosen or implied.
+**Execution status (2026-11-23):** P1-01 through P1-06 complete and verified; P1-08 verification, tracker update, and deployment are done. P1-07's decision package is prepared (`docs/parts-provider-evaluation.md` and `docs/parts-provider-rfq-email.md`), leaving the licensing/provider decision open on the Phase 1 gate. `docs/parts-data-spec.md` holds the 36-vehicle draft; no provider is chosen or implied.
 
 This file is the execution plan and backlog. Work top to bottom. Do not start a phase until its predecessor's gate is met. One backlog item should normally be one branch and one commit.
 
@@ -374,6 +374,13 @@ This item is intentionally document-only. Do not ingest data yet.
 - Draft created at `docs/parts-data-spec.md` with 36 anchor vehicles, required vehicle/assembly/part/fitment/provenance fields, provider questions, and QA gates.
 - Still open (needs the user): request quotes/trial access from at least two providers and select the provider. No provider is chosen or implied here.
 
+**Progress (2026-11-23)**
+
+- Decision package prepared: `docs/parts-provider-evaluation.md` (candidate screen, two-provider matrix, licensing gate, fillable 36-vehicle checklist, published cost stack, scoring weights, open decisions) and `docs/parts-provider-rfq-email.md` (send-ready RFQ and five-vehicle sample request).
+- Six candidates screened. Of those, only **MOTOR Parts/AccuPI** and **Epicor Catalog** publish OEM-numbered US light-duty parts coverage. SEMA Data is specialty/accessory only; Auto Care's ACES/PIES subscriptions are reference databases with no part records; PartsTech is a purchasing API; PartsLogic Connect is ingestion middleware.
+- The decisive risk is licensing, not coverage: Epicor's standard supplement prohibits consumer-facing use of MOTOR/Mitchell content and caps lookup caching at 24 hours; MOTOR's standard DaaS terms exclude consumer-facing applications and its end-user terms are look-up-only. MOTOR also requires per-OEM review, and GM's terms restrict using its parts data to build a "new or distinct electronic parts catalog". A written consumer-redisplay and bulk-storage license is required before any ingestion.
+- Still open (needs the user): send the RFQ, obtain samples/quotes from at least two providers, decide the licensing path and whether the no-server constraint can change, then select or defer. No provider is chosen or implied.
+
 **Acceptance**
 
 - A provider/schema decision can be made without more discovery.
@@ -423,7 +430,7 @@ This item is intentionally document-only. Do not ingest data yet.
 
 | ID | Item | Size | Depends on | Status |
 |---|---|---|---|---|
-| P2-01 | Parts schema, validator, and multi-vehicle ingestion | L | P1-07 | `[ ]` |
+| P2-01 | Parts schema, validator, and multi-vehicle ingestion | L | P1-07 | `[~]` |
 | P2-02 | Populate 25–50 vehicles with licensed parts | L | P2-01 | `[ ]` |
 | P2-03 | VIN-first parts flow | M | P2-02 | `[ ]` |
 | P2-04 | Search upgrade | M | P2-01 | `[ ]` |
@@ -431,23 +438,32 @@ This item is intentionally document-only. Do not ingest data yet.
 | P2-06 | Provenance and freshness UI | S | P2-02 | `[ ]` |
 | P2-07 | Performance and data loading | M | P2-02 | `[ ]` |
 | P2-08 | Fitment/data QA suite | M | P2-02 | `[ ]` |
-| P2-09 | Demand and fitment feedback operations | S | P1-06 | `[ ]` |
+| P2-09 | Demand and fitment feedback operations | S | P1-06 | `[x]` |
 | P2-10 | Phase 2 verification and gate | S | P2-01…P2-09 | `[ ]` |
 
 ### P2-01 — Parts schema, validator, and multi-vehicle ingestion
 
+**Progress (2026-11-25)**
+
+- Schema: `catalog.recordType` (`development`/`production`) and `catalog.rights` (`holder`, `license`, `status`, `permittedRedisplay`, `attribution`, `restrictions`) added to `VehicleCatalog`. Part records keep `source`, `lastUpdated`, `confidence`, and `fitment.market`; `CatalogPartWithContext` now carries `brandSlug`/`modelSlug`/`year`/`vehicleLabel`.
+- Loader: `src/data/parts/index.ts` globs every `*.json` in the directory, checks unique brand/model/year identities, and feeds `src/services/parts.ts`. Search results and part links use the record's vehicle context instead of a hardcoded Civic.
+- Validator: `scripts/validate-parts.mjs` validates all published catalogs and the synthetic fixtures, enforces non-empty assemblies/parts, usable OEM numbers, explicit fitment, source/confidence, per-vehicle slug and OEM uniqueness (with an explicit `sharedNumberReason` opt-out), and rights rules. `--require-licensed` fails any catalog that is not licensed; it currently exits 1 by design because the Civic slice is representative data.
+- Fixtures: `tests/fixtures/parts/fixture-motors-hatch-2021.json` and `sample-works-pickup-2020.json` are synthetic, internal-only records. `tests/parts-catalog.spec.ts` indexes all three vehicles, checks vehicle-qualified search context, duplicate-identity rejection, the passing validator run, and the strict-licensing failure.
+- The Civic dataset moved to `src/data/parts/civic-2020.json` with `recordType: development` and unlicensed rights. Prerender now enumerates every catalog file instead of the Civic path.
+- Phase 2's formal gate is still open (P1-07 provider/licensing decision); this is provider-independent preparation, not ingested data.
+
 **Do**
 
-- [ ] Extend `VehicleCatalog`/`CatalogPart` in `src/types/index.ts` with source, license/rights, last updated, confidence, and market fields where missing.
-- [ ] Update `scripts/validate-parts.mjs` to require:
+- [x] Extend `VehicleCatalog`/`CatalogPart` in `src/types/index.ts` with source, license/rights, last updated, confidence, and market fields where missing.
+- [x] Update `scripts/validate-parts.mjs` to require:
   - non-empty assemblies and parts,
   - valid OEM/reference numbers,
   - explicit fitment years/engines/trims/market,
   - source and confidence,
   - no duplicate part numbers within a vehicle unless intentional.
-- [ ] Add a loader/index that supports multiple vehicles without hardcoded Civic assumptions in `src/services/parts.ts`, `src/pages/SearchPage.tsx`, and `PartPage`.
-- [ ] Add at least two fixture vehicles in tests so multi-vehicle behavior is exercised before real data lands.
-- [ ] Keep the existing 2020 Civic data valid as one record.
+- [x] Add a loader/index that supports multiple vehicles without hardcoded Civic assumptions in `src/services/parts.ts`, `src/pages/SearchPage.tsx`, and `PartPage`.
+- [x] Add at least two fixture vehicles in tests so multi-vehicle behavior is exercised before real data lands.
+- [x] Keep the existing 2020 Civic data valid as one record.
 
 **Acceptance**
 
@@ -518,14 +534,21 @@ PLAYWRIGHT_CHANNEL=msedge npx playwright test tests/smoke.spec.ts -g "VIN|catalo
 
 ### P2-04 — Search upgrade
 
+**Progress (2026-11-25)**
+
+- `searchPartsIn()` now scores exact normalized OEM/interchange matches first, then prefix/partial number matches, exact names, exact aliases, and token matches. Word-level bounded Levenshtein matching handles typos such as “brake padz” without fuzzy-matching numbers.
+- The search page adds vehicle-scoped engine and trim selects plus an **Only parts that fit** checkbox. The checkbox filters by the same `checkFitment()` rules used on part pages and shows fitment badges before it is enabled.
+- Zero-result searches continue to emit only query length, result count, and filter state; no raw query is sent.
+- `tests/parts-catalog.spec.ts` covers number formatting, misspellings, aliases, and no-match behavior; `tests/search-fitment.spec.ts` covers the fitment filter.
+
 **Do**
 
-- [ ] Add fuzzy matching for part names and common aliases.
-- [ ] Normalize OEM numbers (dashes/spaces/case) and support partial numbers.
-- [ ] Rank exact OEM matches first, then exact aliases, then fitment-compatible name matches.
-- [ ] Add a fitment-first filter using the decoded/selected vehicle.
-- [ ] Track zero-result queries by length/result count, not raw text.
-- [ ] Add tests for misspellings, OEM formatting variants, synonyms (“front pads”), and no-match behavior.
+- [x] Add fuzzy matching for part names and common aliases.
+- [x] Normalize OEM numbers (dashes/spaces/case) and support partial numbers.
+- [x] Rank exact OEM matches first, then exact aliases, then fitment-compatible name matches.
+- [x] Add a fitment-first filter using the decoded/selected vehicle.
+- [x] Track zero-result queries by length/result count, not raw text.
+- [x] Add tests for misspellings, OEM formatting variants, synonyms (“front pads”), and no-match behavior.
 
 **Acceptance**
 
@@ -561,12 +584,18 @@ PLAYWRIGHT_CHANNEL=msedge npx playwright test tests/smoke.spec.ts -g "search" --
 
 ### P2-06 — Provenance and freshness UI
 
+**Progress (2026-11-25)**
+
+- Part pages show source, last-updated date with a human freshness label, confidence, market scope, declared rights status, license text, and attribution. The price/availability surface is an explicit **Coming soon** placeholder.
+- Model-year pages add a freshness label beside the catalog date and keep the dealer-verification reminder.
+- Unlicensed development data is labelled as such; the UI does not present it as OEM truth.
+
 **Do**
 
-- [ ] Show source, last updated, confidence, market, and license/attribution on every part record.
-- [ ] Add a “data freshness” line to vehicle and part pages.
-- [ ] Replace “representative” with the real license status once data is licensed.
-- [ ] Keep the dealer-verification reminder for fitment-critical purchases.
+- [x] Show source, last updated, confidence, market, and license/attribution on every part record.
+- [x] Add a “data freshness” line to vehicle and part pages.
+- [x] Replace “representative” with the real license status once data is licensed.
+- [x] Keep the dealer-verification reminder for fitment-critical purchases.
 
 **Acceptance**
 
@@ -614,13 +643,21 @@ PLAYWRIGHT_CHANNEL=msedge npx playwright test tests/smoke.spec.ts -g "search" --
 
 ### P2-09 — Demand and fitment feedback operations
 
+**Progress (2026-11-25)**
+
+- Chose the downloadable CSV path; no backend endpoint, account, or upload was added.
+- `/tools#feedback-export` builds one CSV from the coverage requests and fitment reports saved in this browser, with row counts, an empty state, and copy that the browser saves the file to the user's downloads location while the app never receives a copy.
+- Part pages now offer a **Report a fitment problem** form that stores the issue, vehicle/engine/trim context, and an optional note locally. It has no email field and collects no contact details.
+- Coverage capture copy now says **Request parts coverage** and points to the CSV export instead of promising a notification. The old “local demand record” queue language is gone.
+- `tests/feedback-export.spec.ts` covers CSV escaping, the combined coverage/fitment rows, the filename, the download copy, and the local-only fitment report. Smoke coverage was updated for the renamed coverage request.
+
 **Do**
 
-- [ ] Choose one delivery mechanism: a backend endpoint or a downloadable CSV.
-- [ ] If CSV: add an export button and copy that explains where the file goes.
-- [ ] If endpoint: authenticate, rate-limit, store minimally, and never expose other users' data.
-- [ ] Remove localStorage-only “queue” language if the data is now deliverable.
-- [ ] Do not collect contact details unless the chosen path can actually contact the user.
+- [x] Choose one delivery mechanism: a backend endpoint or a downloadable CSV.
+- [x] If CSV: add an export button and copy that explains where the file goes.
+- [-] If endpoint: not chosen; this phase stays client-side.
+- [x] Remove localStorage-only “queue” language if the data is now deliverable.
+- [x] Do not collect contact details unless the chosen path can actually contact the user.
 
 **Acceptance**
 
@@ -653,17 +690,22 @@ PLAYWRIGHT_CHANNEL=msedge npx playwright test tests/smoke.spec.ts -g "search" --
 
 | ID | Item | Size | Depends on | Status |
 |---|---|---|---|---|
-| P3-01 | Backend, auth, privacy, and data-model decision | S | Phase 2 gate | `[ ]` |
+| P3-01 | Backend, auth, privacy, and data-model decision | S | Phase 2 gate | `[~]` |
 | P3-02 | Accounts and cloud sync for garage/checklist | L | P3-01 | `[ ]` |
 | P3-03 | Real recall monitoring | L | P3-01, P1-02 | `[ ]` |
 | P3-04 | Availability and pricing feed | L | Phase 2 gate, P3-01 | `[ ]` |
 | P3-05 | Fleet workflow and optional API | M | Phase 2 gate, P3-01 | `[ ]` |
-| P3-06 | Extension ship or archive decision | M | P1-04 | `[ ]` |
+| P3-06 | Extension ship or archive decision | M | P1-04 | `[~]` |
 | P3-07 | Monetization and conversion measurement | M | P3-02, P3-04 | `[ ]` |
 | P3-08 | Observability, runbooks, and data freshness alerts | M | P3-01 | `[ ]` |
 | P3-09 | Phase 3 verification and gate | S | P3-01…P3-08 | `[ ]` |
 
 ### P3-01 — Backend, auth, privacy, and data-model decision
+
+**Progress (2026-11-25)**
+
+- `docs/adr-001-backend-and-commercial.md` records the proposed client-only decision, the free Phase 2 scope, the CSV feedback path, and the exact triggers for revisiting a backend. It does not select an auth provider, database, or hosting plan; those remain open until the owner approves a budget and privacy model.
+- Every backend-dependent feature is visible on `/roadmap` with **Coming soon** and its dependency, rather than being silently absent.
 
 **Do**
 
@@ -765,6 +807,10 @@ PLAYWRIGHT_CHANNEL=msedge npx playwright test tests/smoke.spec.ts -g "search" --
 ---
 
 ### P3-06 — Extension ship or archive decision
+
+**Progress (2026-11-25)**
+
+- The source-only prototype remains in `extension/`. It is not advertised as installable: the roadmap lists **Browser extension** as **Coming soon** with packaging, permissions review, and store submission as the dependencies. A ship-or-archive decision is still open.
 
 **Do**
 
@@ -928,6 +974,7 @@ Do not add these in any phase unless this plan is explicitly revised:
 | 2026-11-22 | P1-01 complete: removed commercial panel/feed, B2B API card, transfer-code UI, dealer queue, manufacturer communications card and data field, demand email, extension card, roadmap and roadmap CSS; cleaned Tools summary/imports, PartPage state, and dead commercial/fitment types. Typecheck, lint, build, 124 Playwright tests pass. | — |
 | 2026-11-22 | P1-02 complete: Recall Watch renamed to Recall Checklist across UI, action labels and errors; background watchdog now skips incomplete/inferred identities without recording a check. Regression test added. | — |
 | 2026-11-22 | P1-07 draft: `docs/parts-data-spec.md` with 36-vehicle shortlist and required fields; provider work remains. | — |
+| 2026-11-23 | P1-07 decision package: provider evaluation, licensing gate, 36-vehicle sample checklist, and RFQ email. No provider selected. | — |
 | 2026-11-22 | P1-03 complete: My Garage fleet import and backup/restore consolidated into one tabbed Import/export card with capacity count; backup round-trip coverage added. | — |
 | 2026-11-22 | P1-01 review: added negative coverage for the removed roadmap, Garage transfer UI, Fleet B2B API, demand email, and Tools extension card. No app-code cleanup was needed. | — |
 | 2026-11-22 | P1-03 review: removed the unused embedded branches and fleet count subscription, hoisted tab definitions, and added tab keyboard plus hidden-panel coverage. | — |
