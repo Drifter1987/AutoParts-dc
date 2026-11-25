@@ -75,31 +75,32 @@ export default function DemandCapture({
         <div>
           <p className="eyebrow">Coverage request</p>
           <h2 id={titleId} className={styles.panelTitle}>
-            Notify me when parts are covered
+            Request parts coverage
           </h2>
         </div>
         <span className="badge badge-amber">No placeholder parts</span>
       </div>
       <p className={styles.muted} style={{ marginBottom: 'var(--space-3)' }}>
-        Tell us the vehicle and the part you need. We record the request locally so coverage can be
-        prioritized. This does not create a catalog entry, promise availability, or send an email in
-        this build.
+        Tell us the vehicle and the part you need. The request is stored only in this browser so
+        coverage can be prioritized. It does not create a catalog entry or promise availability.
+        No email or contact details are collected; download the feedback CSV from Tools if you want
+        to share the request.
       </p>
 
       {reference ? (
         <div className={`${styles.status} ${styles.statusSuccess}`} role="status">
           <CheckCircle2 size={16} aria-hidden="true" />
           <div>
-            <strong>Demand request saved as {reference}.</strong>
+            <strong>Coverage request saved as {reference}.</strong>
             <p style={{ marginTop: 3 }}>
-              This is a local demand record, not a promise of coverage or a notification delivery.
-              Nothing was sent to a third party.
+              This is a local record you can export from the feedback CSV on Tools. It is not a
+              promise of coverage or a notification delivery. Nothing was sent to a third party.
             </p>
           </div>
         </div>
       ) : !open ? (
         <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-          <BellPlus size={14} /> Notify me when parts are covered
+          <BellPlus size={14} /> Request parts coverage
         </button>
       ) : (
         <form onSubmit={submit} noValidate>

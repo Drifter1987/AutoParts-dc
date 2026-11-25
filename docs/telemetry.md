@@ -50,8 +50,9 @@ adds it later:
 - precise location, cookies, account identifiers, or advertising identifiers
 
 Local-only data (My Garage, Recall Checklist, repair marks, coverage requests,
-fleet sheets, and backup files) stays in the browser's `localStorage` and is not
-uploaded by telemetry.
+fitment reports, fleet sheets, and backup files) stays in the browser's
+`localStorage` and is not uploaded by telemetry. Coverage requests and fitment
+reports leave the browser only through the user's own CSV download.
 
 ## Scrubbing and the error baseline
 

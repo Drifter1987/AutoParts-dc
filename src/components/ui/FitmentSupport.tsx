@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ChevronRight, ShieldQuestion } from 'lucide-react';
 import { getPartPath, resolveFitmentConflict } from '../../services/parts';
+import FitmentFeedbackForm from './FitmentFeedbackForm';
 import type { CatalogPartWithContext, VehicleCatalog } from '../../types';
 import styles from '../../styles/features.module.css';
 
@@ -67,6 +68,8 @@ export default function FitmentSupport({ part, vehicle, engine, trim, vin }: Fit
         This explains the catalog rules for {part.name}. It is not a guarantee of fitment; confirm
         the exact part number with a dealer using the VIN or engine/trim combination.
       </p>
+
+      <FitmentFeedbackForm part={part} vehicle={vehicle} engine={engine} trim={trim} />
     </section>
   );
 }

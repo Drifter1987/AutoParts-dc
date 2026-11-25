@@ -261,6 +261,38 @@ export interface DemandRequest {
   status: 'local-demand-list';
 }
 
+// ─── Fitment Feedback ────────────────────────────────────────────────────────
+
+export type FitmentIssue =
+  | 'does-not-fit'
+  | 'part-number-mismatch'
+  | 'missing-part'
+  | 'other';
+
+/** A client-side fitment report; it carries no contact details. */
+export interface FitmentFeedback {
+  id: string;
+  createdAt: string;
+
+  partSlug: string;
+  partName: string;
+  oemNumber: string;
+
+  brand: string;
+  brandSlug: string;
+  model: string;
+  modelSlug: string;
+  year: number;
+  assemblySlug: string;
+  assemblyName: string;
+
+  engine: string;
+  trim: string;
+  issue: FitmentIssue;
+  note: string;
+  status: 'local-fitment-feedback';
+}
+
 // ─── Fleet ───────────────────────────────────────────────────────────────────
 
 export type FleetRowStatus = 'pending' | 'checking' | 'complete' | 'error';

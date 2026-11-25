@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   BellRing,
+  Download,
   FileText,
   Layers,
   ShieldCheck,
@@ -10,6 +11,8 @@ import {
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { getRecallWatches } from '../services/recallWatch';
 import { getDemandRequests } from '../services/demand';
+import { feedbackCsv, feedbackCsvFilename } from '../services/feedbackCsv';
+import { getFitmentFeedback } from '../services/fitmentFeedback';
 import { getGarageVehicles } from '../services/garage';
 import { telemetryEndpointConfigured } from '../services/telemetry';
 import RollingNumber from '../components/ui/RollingNumber';
@@ -54,7 +57,7 @@ const TOOLS = [
     icon: <Users size={18} />,
     status: 'On this device',
     title: 'Coverage demand',
-    text: 'When a model or part is not published, record the VIN or vehicle and the part need in a local coverage-request list.',
+    text: 'When a model or part is not published, record the VIN or vehicle and the part need, then export it with any fitment reports from the feedback panel on this page.',
     href: '/catalog/toyota',
     link: 'Try an uncovered brand',
   },
@@ -63,7 +66,23 @@ const TOOLS = [
 export default function ToolsPage() {
   const watches = getRecallWatches();
   const demand = getDemandRequests();
+  const fitmentReports = getFitmentFeedback();
+  const feedbackCount = demand.length + fitmentReports.length;
   const garage = getGarageVehicles();
+
+  const exportFeedback = () => {
+    if (!feedbackCount) return;
+    const blob = new Blob([feedbackCsv(demand, fitmentReports)], {
+      type: 'text/csv;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = feedbackCsvFilename();
+    anchor.click();
+    // Let the browser start reading the blob before releasing its URL.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   usePageMetadata(
     'Safety & Garage Tools — AutoParts',
@@ -111,6 +130,10 @@ export default function ToolsPage() {
             <RollingNumber className={styles.summaryValue} value={demand.length} />
             <span className={styles.summaryLabel}>Coverage requests</span>
           </div>
+          <div className={styles.summaryItem}>
+            <RollingNumber className={styles.summaryValue} value={fitmentReports.length} />
+            <span className={styles.summaryLabel}>Fitment reports</span>
+          </div>
         </section>
 
         <section className={styles.section} aria-labelledby="tools-grid-title" style={{ marginTop: 'var(--space-8)' }}>
@@ -133,6 +156,66 @@ export default function ToolsPage() {
                 <span className={styles.toolLink}>{tool.link} →</span>
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section
+          id="feedback-export"
+          className={`card ${styles.panel}`}
+          style={{ marginTop: 'var(--space-6)' }}
+          aria-labelledby="feedback-export-title"
+        >
+          <div className={styles.panelHeader}>
+            <div>
+              <p className="eyebrow">Feedback export</p>
+              <h2 id="feedback-export-title" className={styles.panelTitle}>
+                Coverage and fitment feedback CSV
+              </h2>
+            </div>
+            <span className="badge badge-ice">On this device</span>
+          </div>
+
+          <div className={styles.summaryGrid}>
+            <div className={styles.summaryItem}>
+              <RollingNumber className={styles.summaryValue} value={demand.length} />
+              <span className={styles.summaryLabel}>Coverage requests</span>
+            </div>
+            <div className={styles.summaryItem}>
+              <RollingNumber className={styles.summaryValue} value={fitmentReports.length} />
+              <span className={styles.summaryLabel}>Fitment reports</span>
+            </div>
+            <div className={styles.summaryItem}>
+              <RollingNumber className={styles.summaryValue} value={feedbackCount} />
+              <span className={styles.summaryLabel}>Rows in the CSV</span>
+            </div>
+          </div>
+
+          <p className={styles.muted}>
+            This CSV is built in your browser from the coverage requests and fitment reports saved
+            on this device. It includes any VIN or free-text note you entered. There is no email
+            field in either flow, and no contact details are collected.
+          </p>
+          <p className={styles.muted}>
+            When you choose Download CSV, your browser saves the file to the downloads location you
+            have configured — usually your Downloads folder. This app never uploads the file,
+            receives no copy, and keeps no server-side record. It leaves this device only when you
+            share it yourself.
+          </p>
+
+          <div className={styles.formActions}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={exportFeedback}
+              disabled={!feedbackCount}
+            >
+              <Download size={14} /> Download feedback CSV
+            </button>
+            <span className={styles.panelMeta}>
+              {feedbackCount
+                ? `${feedbackCount} row${feedbackCount === 1 ? '' : 's'} ready. Export before clearing browser storage.`
+                : 'No coverage requests or fitment reports are saved yet.'}
+            </span>
           </div>
         </section>
 
@@ -184,8 +267,9 @@ export default function ToolsPage() {
           <p className={styles.muted}>
             Payloads never include a VIN, email address, license plate, stock number, saved
             vehicle name, notes, raw search text, URL query string, or raw error message.
-            Garage, Recall Checklist, repair marks, coverage requests, fleet sheets, and backup
-            files remain in <span className="mono">localStorage</span> on this device.
+            Garage, Recall Checklist, repair marks, coverage requests, fitment reports, fleet
+            sheets, and backup files remain in <span className="mono">localStorage</span> on this
+            device until you export or clear them.
           </p>
           <p className={styles.muted}>
             The full posture, including the event list and scrubbing rules, is in{' '}

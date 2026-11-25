@@ -1344,15 +1344,15 @@ test.describe('product safety and handoff layer', () => {
   test('captures demand instead of dead-ending an uncovered brand', async ({ page }) => {
     await page.goto('/catalog/toyota');
 
-    await expect(page.getByRole('heading', { name: 'Notify me when parts are covered' })).toBeVisible();
-    await page.getByRole('button', { name: 'Notify me when parts are covered' }).click();
+    await expect(page.getByRole('heading', { name: 'Request parts coverage' })).toBeVisible();
+    await page.getByRole('button', { name: 'Request parts coverage' }).click();
     await expect(page.getByLabel(/Email/i)).toHaveCount(0);
     await page.getByLabel('Model', { exact: true }).fill('Camry');
     await page.getByLabel('Part needed').fill('front brake pads');
     await page.getByRole('button', { name: 'Save coverage request' }).click();
 
-    await expect(page.getByText(/Demand request saved as DEMAND-/)).toBeVisible();
-    await expect(page.getByText(/local demand record/i)).toBeVisible();
+    await expect(page.getByText(/Coverage request saved as DEMAND-/)).toBeVisible();
+    await expect(page.getByText(/local record you can export/i)).toBeVisible();
     const demandRows = await page.evaluate(
       () =>
         JSON.parse(localStorage.getItem('autoparts.demand.v1') || '[]') as Record<string, unknown>[],
@@ -1369,23 +1369,23 @@ test.describe('product safety and handoff layer', () => {
     await expect(page).toHaveURL(/\/catalog\/toyota\/camry\/\d{4}$/);
     await expect(page.getByRole('heading', { name: /Toyota Camry Parts$/ })).toBeVisible();
     await expect(page.getByText(/No parts are listed for this vehicle/i)).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Notify me when parts are covered' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Request parts coverage' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Notify me when parts are covered' }).click();
+    await page.getByRole('button', { name: 'Request parts coverage' }).click();
     await expect(page.getByLabel('Year', { exact: true })).toHaveValue(/\d{4}/);
     await expect(page.getByLabel('Make', { exact: true })).toHaveValue('Toyota');
     await expect(page.getByLabel('Model', { exact: true })).toHaveValue('Camry');
     await page.getByLabel('Part needed').fill('cabin air filter');
     await page.getByRole('button', { name: 'Save coverage request' }).click();
 
-    await expect(page.getByText(/Demand request saved as DEMAND-/)).toBeVisible();
+    await expect(page.getByText(/Coverage request saved as DEMAND-/)).toBeVisible();
     await expect(page.getByText(/not a promise of coverage/i)).toBeVisible();
   });
 
   test('links an uncovered decoded vehicle to its exact year coverage page', async ({ page }) => {
     await page.goto(`/vin?vin=${KNOWN_GOOD_VIN}`);
 
-    const coverageLink = page.getByRole('link', { name: 'Notify me when parts are covered' });
+    const coverageLink = page.getByRole('link', { name: 'Request parts coverage' });
     await expect(coverageLink).toHaveAttribute(
       'href',
       `/catalog/honda/accord/2003?vin=${KNOWN_GOOD_VIN}`,

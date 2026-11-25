@@ -223,7 +223,7 @@ export default function VehicleCard({ result, catalogBrands, reportMode = false 
                 })
               }
             >
-              Notify me when parts are covered
+              Request parts coverage
             </Link>
           ) : catalogBrand ? (
             <Link to={`/catalog/${catalogBrand.slug}`} className="btn btn-ghost">
