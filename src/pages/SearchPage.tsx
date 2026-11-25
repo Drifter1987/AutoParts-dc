@@ -5,8 +5,10 @@ import { usePageMetadata } from '../hooks/usePageMetadata';
 import { catalogApi } from '../services/api';
 import {
   CATALOG_VEHICLES,
-  CIVIC_2020,
+  checkFitment,
+  getCatalogVehicle,
   getPartPath,
+  getVehicleKey,
   getVehicleLabel,
   getVehiclePath,
   searchParts,
@@ -14,7 +16,7 @@ import {
 import { trackEvent } from '../services/telemetry';
 import PartList from '../components/ui/PartList';
 import DemandCapture from '../components/ui/DemandCapture';
-import type { Brand } from '../types';
+import type { Brand, PartListItem } from '../types';
 import styles from '../styles/parts.module.css';
 
 export default function SearchPage() {
@@ -22,6 +24,9 @@ export default function SearchPage() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const query = searchParams.get('q') || '';
   const vehicleFilter = searchParams.get('vehicle') || '';
+  const engineFilter = searchParams.get('engine') || '';
+  const trimFilter = searchParams.get('trim') || '';
+  const fitOnly = searchParams.get('fit') === '1';
   const vin = searchParams.get('vin');
 
   usePageMetadata(
@@ -59,25 +64,46 @@ export default function SearchPage() {
         const next = new URLSearchParams(previous);
         if (value) next.set('vehicle', value);
         else next.delete('vehicle');
+        next.delete('engine');
+        next.delete('trim');
+        next.delete('fit');
         return next;
       },
       { replace: true },
     );
   };
 
+  const setParam = (key: string, value: string) => {
+    setSearchParams(
+      previous => {
+        const next = new URLSearchParams(previous);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const selectedVehicle = useMemo(
+    () => CATALOG_VEHICLES.find(item => getVehicleKey(item) === vehicleFilter) ?? null,
+    [vehicleFilter],
+  );
+
   const partResults = useMemo(() => {
     const all = searchParts(query);
-    if (!vehicleFilter) return all;
-    const vehicle = CATALOG_VEHICLES.find(item => item.catalog.modelSlug === vehicleFilter);
-    if (!vehicle) return all;
-    return all.filter(part =>
-      vehicle.assemblies.some(
-        assembly =>
-          assembly.slug === part.assemblySlug &&
-          assembly.parts.some(item => item.slug === part.slug),
-      ),
+    if (!selectedVehicle) return all;
+    const vehicleMatches = all.filter(
+      part =>
+        part.brandSlug === selectedVehicle.catalog.brandSlug &&
+        part.modelSlug === selectedVehicle.catalog.modelSlug &&
+        part.year === selectedVehicle.catalog.year,
     );
-  }, [query, vehicleFilter]);
+    if (!fitOnly || (!engineFilter && !trimFilter)) return vehicleMatches;
+    return vehicleMatches.filter(
+      part => checkFitment(part, engineFilter, trimFilter).tone === 'success',
+    );
+  }, [query, selectedVehicle, fitOnly, engineFilter, trimFilter]);
 
   const brandResults = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -105,8 +131,19 @@ export default function SearchPage() {
     return () => window.clearTimeout(timer);
   }, [query, vehicleFilter, partResults.length]);
 
-  const hrefForPart = (part: { slug: string; assemblySlug?: string }) =>
-    getPartPath(CIVIC_2020, part.assemblySlug || 'engine', part.slug, vin);
+  const hrefForPart = (part: PartListItem) => {
+    const vehicle =
+      part.brandSlug && part.modelSlug && part.year
+        ? getCatalogVehicle(part.brandSlug, part.modelSlug, part.year)
+        : null;
+    if (!vehicle) return '/search';
+    return getPartPath(
+      vehicle,
+      part.assemblySlug || vehicle.assemblies[0]?.slug || 'engine',
+      part.slug,
+      vin,
+    );
+  };
 
   return (
     <div className={styles.page}>
@@ -118,12 +155,12 @@ export default function SearchPage() {
             <p className={styles.subtitle}>
               Mechanics and parts-counter staff can start with an OEM number, supersession,
               interchange reference, part name, or alias. Part results come from the published
-              36-part 2020 Civic slice; brand and model matches are catalog metadata only.
+              parts catalog; brand and model matches are catalog metadata only.
             </p>
           </div>
           <div className={styles.pageActions}>
-            <Link to={getVehiclePath(CIVIC_2020)} className="btn btn-ghost">
-              Browse 2020 Civic
+            <Link to={getVehiclePath(CATALOG_VEHICLES[0])} className="btn btn-ghost">
+              Browse {CATALOG_VEHICLES[0].catalog.year} {CATALOG_VEHICLES[0].catalog.model}
             </Link>
           </div>
         </div>
@@ -158,12 +195,60 @@ export default function SearchPage() {
             >
               <option value="">All available vehicles</option>
               {CATALOG_VEHICLES.map(vehicle => (
-                <option key={vehicle.catalog.modelSlug} value={vehicle.catalog.modelSlug}>
+                <option key={getVehicleKey(vehicle)} value={getVehicleKey(vehicle)}>
                   {getVehicleLabel(vehicle)}
                 </option>
               ))}
             </select>
           </label>
+          {selectedVehicle && (
+            <>
+              <label className={styles.toolbarField}>
+                <span className={styles.toolbarLabel}>Engine</span>
+                <select
+                  className={styles.select}
+                  value={engineFilter}
+                  onChange={event => setParam('engine', event.target.value)}
+                  aria-label="Filter parts by engine"
+                >
+                  <option value="">All engines</option>
+                  {selectedVehicle.catalog.engineOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+              <label className={styles.toolbarField}>
+                <span className={styles.toolbarLabel}>Trim</span>
+                <select
+                  className={styles.select}
+                  value={trimFilter}
+                  onChange={event => setParam('trim', event.target.value)}
+                  aria-label="Filter parts by trim"
+                >
+                  <option value="">All trims</option>
+                  {selectedVehicle.catalog.trimOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+              {(engineFilter || trimFilter) && (
+                <label className={styles.toolbarField}>
+                  <span className={styles.toolbarLabel}>Only parts that fit</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 40 }}>
+                    <input
+                      type="checkbox"
+                      checked={fitOnly}
+                      onChange={event => setParam('fit', event.target.checked ? '1' : '')}
+                      aria-label="Only show parts that fit the selected engine and trim"
+                    />
+                    <span className={styles.sectionMeta}>
+                      {fitOnly ? 'Fitment filter on' : 'Fitment badges only'}
+                    </span>
+                  </span>
+                </label>
+              )}
+            </>
+          )}
         </div>
 
         {!query ? (
@@ -208,9 +293,16 @@ export default function SearchPage() {
                     <p className="eyebrow">Parts</p>
                     <h2 id="part-results-title" className={styles.h2}>Matching part records</h2>
                   </div>
-                  <span className={styles.sectionMeta}>Published 2020 Civic slice · click for fitment and provenance</span>
+                  <span className={styles.sectionMeta}>Published parts slice · click for fitment and provenance</span>
                 </div>
-                <PartList parts={partResults} hrefForPart={hrefForPart} hasVin={Boolean(vin)} />
+                <PartList
+                  parts={partResults}
+                  hrefForPart={hrefForPart}
+                  hasVin={Boolean(vin)}
+                  engine={engineFilter}
+                  trim={trimFilter}
+                  vehicleLabel={selectedVehicle ? getVehicleLabel(selectedVehicle) : ''}
+                />
               </section>
             )}
 
@@ -241,7 +333,11 @@ export default function SearchPage() {
             {partResults.length === 0 && brandResults.length === 0 && (
               <div className={styles.empty}>
                 <Search size={34} />
-                <p>No part or vehicle catalog match for “{query}”.</p>
+                <p>
+                  {fitOnly && (engineFilter || trimFilter)
+                    ? `No parts match “${query}” with the selected fitment.`
+                    : `No part or vehicle catalog match for “${query}”.`}
+                </p>
                 <p className={styles.provenance}>
                   Try an OEM number such as <span className="mono">45022-TBA-A00</span>, a common
                   alias such as “front pads”, or a brand such as “Honda”.
@@ -266,8 +362,9 @@ export default function SearchPage() {
 
         <div className={styles.notice} style={{ marginTop: 'var(--space-6)', marginBottom: 0 }}>
           <span>
-            The searchable parts slice currently covers the {getVehicleLabel(CIVIC_2020)}. Results
-            are representative and must be verified with a dealer before ordering.
+            The searchable parts slice currently covers{' '}
+            {CATALOG_VEHICLES.map(getVehicleLabel).join(', ')}. Results are representative and must
+            be verified with a dealer before ordering.
           </span>
         </div>
       </div>
