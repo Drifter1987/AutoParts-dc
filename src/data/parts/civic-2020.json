@@ -7,6 +7,18 @@
     "year": 2020,
     "generation": "10th generation",
     "market": "US",
+    "recordType": "development",
+    "rights": {
+      "holder": "Honda Motor Co., Ltd. (trademarks); record compilation by AutoParts",
+      "license": "No license. Representative development data compiled for schema and UI work.",
+      "status": "unlicensed",
+      "permittedRedisplay": "none-declared",
+      "attribution": "Honda OEM reference numbers are trademarks of Honda Motor Co., Ltd.",
+      "restrictions": [
+        "Not licensed OEM data",
+        "Do not present as verified fitment or use for ordering without dealer verification"
+      ]
+    },
     "engineOptions": ["1.5L Turbo", "2.0L"],
     "trimOptions": ["LX", "Sport", "EX", "EX-T", "Touring", "Si", "Type R"],
     "source": "Representative Honda OEM reference data",

@@ -1,4 +1,12 @@
-import civicData from '../data/civic-2020-parts.json';
+import { CATALOG_VEHICLES } from '../data/parts';
+import {
+  buildAllParts,
+  getPartSearchText,
+  getVehicleKey,
+  normalizePartNumber,
+  normalizeText,
+  searchPartsIn,
+} from './partsIndex';
 import type {
   CatalogPart,
   CatalogPartWithContext,
@@ -8,28 +16,32 @@ import type {
   VINDecodeResult,
 } from '../types';
 
-export const CIVIC_2020 = civicData as VehicleCatalog;
-export const CATALOG_VEHICLES: VehicleCatalog[] = [CIVIC_2020];
+export { CATALOG_VEHICLES, getPartSearchText, getVehicleKey, normalizePartNumber };
 
-export const ALL_PARTS: CatalogPartWithContext[] = CATALOG_VEHICLES.flatMap(vehicle =>
-  vehicle.assemblies.flatMap(assembly =>
-    assembly.parts.map(part => ({
-      ...part,
-      assemblySlug: assembly.slug,
-      assemblyName: assembly.name,
-      assemblySummary: assembly.summary,
-    })),
-  ),
-);
+const FEATURED_VEHICLE_KEY = 'honda/civic/2020';
 
-const normalizeText = (value: string | null | undefined) =>
-  (value ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+/** The published slice the home and brand pages call out as the current example. */
+export const CIVIC_2020: VehicleCatalog =
+  CATALOG_VEHICLES.find(vehicle => getVehicleKey(vehicle) === FEATURED_VEHICLE_KEY) ??
+  CATALOG_VEHICLES[0];
 
-/** Normalize an OEM/reference number for matching: 15400-PLM-A02 -> 15400PLMA02. */
-export function normalizePartNumber(value: string): string {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+export const ALL_PARTS: CatalogPartWithContext[] = buildAllParts(CATALOG_VEHICLES);
+
+function partWithContext(
+  part: CatalogPart,
+  vehicle: VehicleCatalog,
+  assembly: PartAssembly,
+): CatalogPartWithContext {
+  return {
+    ...part,
+    assemblySlug: assembly.slug,
+    assemblyName: assembly.name,
+    assemblySummary: assembly.summary,
+    brandSlug: vehicle.catalog.brandSlug,
+    modelSlug: vehicle.catalog.modelSlug,
+    year: vehicle.catalog.year,
+    vehicleLabel: getVehicleLabel(vehicle),
+  };
 }
 
 export function getCatalogVehicle(
@@ -96,16 +108,10 @@ export function getPart(
   assemblySlug: string | undefined,
   partSlug: string | undefined,
 ): CatalogPartWithContext | null {
-  const assembly = getAssembly(brandSlug, modelSlug, year, assemblySlug);
+  const vehicle = getCatalogVehicle(brandSlug, modelSlug, year);
+  const assembly = vehicle?.assemblies.find(item => item.slug === assemblySlug);
   const part = assembly?.parts.find(item => item.slug === partSlug);
-  return part
-    ? {
-        ...part,
-        assemblySlug: assembly.slug,
-        assemblyName: assembly.name,
-        assemblySummary: assembly.summary,
-      }
-    : null;
+  return vehicle && assembly && part ? partWithContext(part, vehicle, assembly) : null;
 }
 
 export function getVehiclePath(vehicle: VehicleCatalog, vin?: string | null): string {
@@ -134,44 +140,9 @@ export function getPartCount(vehicle: VehicleCatalog): number {
   return vehicle.assemblies.reduce((total, assembly) => total + assembly.parts.length, 0);
 }
 
-export function getPartSearchText(part: CatalogPart, assemblyName = ''): string {
-  return normalizeText(
-    [
-      part.name,
-      part.oemNumber,
-      ...part.alternateNumbers,
-      ...part.supersedes,
-      ...part.interchange,
-      ...part.aliases,
-      assemblyName,
-    ].join(' '),
-  );
-}
-
 /** Search by part name, alias, OEM number, supersession, or interchange number. */
 export function searchParts(query: string, limit = 40): CatalogPartWithContext[] {
-  const raw = query.trim();
-  if (!raw) return [];
-
-  const tokens = raw
-    .toLowerCase()
-    .split(/\s+/)
-    .map(token => normalizeText(token))
-    .filter(Boolean);
-
-  return ALL_PARTS.filter(part => {
-    const haystack = getPartSearchText(part, part.assemblyName);
-    if (normalizedPartNumberMatches(part, raw)) return true;
-    return tokens.every(token => haystack.includes(token));
-  }).slice(0, limit);
-}
-
-function normalizedPartNumberMatches(part: CatalogPart, query: string): boolean {
-  const normalizedQuery = normalizePartNumber(query);
-  if (normalizedQuery.length < 3) return false;
-  return [part.oemNumber, ...part.alternateNumbers, ...part.supersedes, ...part.interchange]
-    .map(normalizePartNumber)
-    .some(number => number.includes(normalizedQuery));
+  return searchPartsIn(ALL_PARTS, query, limit);
 }
 
 export interface FitmentCheck {
@@ -262,6 +233,10 @@ export function resolveFitmentConflict(
       assemblySlug: part.assemblySlug,
       assemblyName: part.assemblyName,
       assemblySummary: part.assemblySummary,
+      brandSlug: vehicle.catalog.brandSlug,
+      modelSlug: vehicle.catalog.modelSlug,
+      year: vehicle.catalog.year,
+      vehicleLabel: getVehicleLabel(vehicle),
     }));
 
   return { reasons, alternatives, complete };

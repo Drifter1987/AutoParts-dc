@@ -1,0 +1,85 @@
+{
+  "catalog": {
+    "brand": "Sample Works",
+    "brandSlug": "sample-works",
+    "model": "Pickup",
+    "modelSlug": "pickup",
+    "year": 2020,
+    "generation": "Synthetic test fixture",
+    "market": "US",
+    "recordType": "development",
+    "rights": {
+      "holder": "AutoParts test suite",
+      "license": "Synthetic fixture generated for automated tests",
+      "status": "synthetic",
+      "permittedRedisplay": "internal-only",
+      "attribution": "Synthetic test fixture",
+      "restrictions": [
+        "Not real parts data",
+        "Never ship to production"
+      ]
+    },
+    "engineOptions": ["3.5L V6"],
+    "trimOptions": ["XL", "XLT"],
+    "source": "Synthetic test fixture — no real part data",
+    "lastUpdated": "2026-11-25",
+    "confidence": "unconfirmed",
+    "disclaimer": "Synthetic test fixture used to exercise multi-vehicle validation. Not real parts data; never present it as fitment."
+  },
+  "assemblies": [
+    {
+      "slug": "filters",
+      "name": "Filters",
+      "summary": "Synthetic filtration records.",
+      "diagramLabel": "Synthetic filter fixture diagram",
+      "parts": [
+        {
+          "slug": "sample-air-filter",
+          "name": "Sample Air Filter",
+          "oemNumber": "SW-3001-C",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": [],
+          "aliases": ["air filter", "sample filter"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["3.5L V6"],
+            "trims": ["XL", "XLT"],
+            "market": "US"
+          },
+          "fitmentNotes": "Synthetic record for schema tests only.",
+          "source": "Synthetic test fixture — no real part data",
+          "lastUpdated": "2026-11-25",
+          "confidence": "unconfirmed"
+        }
+      ]
+    },
+    {
+      "slug": "brakes",
+      "name": "Brakes",
+      "summary": "Synthetic brake records.",
+      "diagramLabel": "Synthetic brake fixture diagram",
+      "parts": [
+        {
+          "slug": "sample-front-rotor",
+          "name": "Sample Front Rotor",
+          "oemNumber": "SW-3002-C",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": [],
+          "aliases": ["front rotor"],
+          "fitment": {
+            "years": [2020],
+            "engines": ["3.5L V6"],
+            "trims": ["XL", "XLT"],
+            "market": "US"
+          },
+          "fitmentNotes": "Synthetic record for schema tests only.",
+          "source": "Synthetic test fixture — no real part data",
+          "lastUpdated": "2026-11-25",
+          "confidence": "unconfirmed"
+        }
+      ]
+    }
+  ]
+}

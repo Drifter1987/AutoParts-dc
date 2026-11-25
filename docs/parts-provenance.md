@@ -2,7 +2,9 @@
 
 ## Current status
 
-The 2020 Honda Civic dataset in `src/data/civic-2020-parts.json` is a **representative product-development catalog**, not a licensed OEM feed. Part names and OEM/reference number formats are realistic, but every record is marked `confidence: "reference"` and the UI displays a verification disclaimer. Do not present this dataset as verified OEM fitment.
+The 2020 Honda Civic dataset in `src/data/parts/civic-2020.json` is a **representative product-development catalog**, not a licensed OEM feed. Part names and OEM/reference number formats are realistic, but every record is marked `confidence: "reference"` and the UI displays a verification disclaimer. Do not present this dataset as verified OEM fitment.
+
+Catalog files in `src/data/parts/` are loaded automatically by `src/data/parts/index.ts`; the validator also checks the synthetic fixtures in `tests/fixtures/parts/`. Every catalog must declare a `recordType` and a `rights` block (`licensed`, `unlicensed`, or `synthetic`) before it validates.
 
 The vertical slice exists to prove the schema, navigation, search, fitment presentation, and provenance fields before investing in licensed data.
 
@@ -12,7 +14,7 @@ Every part must carry:
 
 | Field | Purpose |
 |---|---|
-| `slug` | Stable URL key, unique across the catalog |
+| `slug` | Stable URL key, unique within the vehicle |
 | `name` | Human-readable part name |
 | `oemNumber` | Primary OEM or reference number |
 | `alternateNumbers` | Other numbers printed on the part or superseded by it |
@@ -28,7 +30,7 @@ Every part must carry:
 | `lastUpdated` | ISO date for the record |
 | `confidence` | `verified`, `reference`, or `unconfirmed` |
 
-The top-level catalog records its source, last-updated date, confidence, market, engine options, trim options, and customer-facing disclaimer.
+The top-level catalog records its source, last-updated date, confidence, market, engine options, trim options, record type, rights status, and customer-facing disclaimer. Unlicensed development catalogs cannot declare public-web redisplay, carry `verified` confidence, or validate under `--require-licensed`.
 
 ## Validation gate
 

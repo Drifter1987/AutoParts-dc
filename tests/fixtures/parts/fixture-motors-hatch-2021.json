@@ -1,0 +1,104 @@
+{
+  "catalog": {
+    "brand": "Fixture Motors",
+    "brandSlug": "fixture-motors",
+    "model": "Hatch",
+    "modelSlug": "hatch",
+    "year": 2021,
+    "generation": "Synthetic test fixture",
+    "market": "US",
+    "recordType": "development",
+    "rights": {
+      "holder": "AutoParts test suite",
+      "license": "Synthetic fixture generated for automated tests",
+      "status": "synthetic",
+      "permittedRedisplay": "internal-only",
+      "attribution": "Synthetic test fixture",
+      "restrictions": [
+        "Not real parts data",
+        "Never ship to production"
+      ]
+    },
+    "engineOptions": ["1.4L Turbo"],
+    "trimOptions": ["Base", "Sport"],
+    "source": "Synthetic test fixture — no real part data",
+    "lastUpdated": "2026-11-25",
+    "confidence": "unconfirmed",
+    "disclaimer": "Synthetic test fixture used to exercise multi-vehicle validation. Not real parts data; never present it as fitment."
+  },
+  "assemblies": [
+    {
+      "slug": "engine",
+      "name": "Engine",
+      "summary": "Synthetic engine maintenance records.",
+      "diagramLabel": "Synthetic engine fixture diagram",
+      "parts": [
+        {
+          "slug": "fixture-oil-filter",
+          "name": "Fixture Oil Filter",
+          "oemNumber": "FX-1101-A",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": [],
+          "aliases": ["oil filter", "fixture filter"],
+          "fitment": {
+            "years": [2021],
+            "engines": ["1.4L Turbo"],
+            "trims": ["Base", "Sport"],
+            "market": "US"
+          },
+          "fitmentNotes": "Synthetic record for schema tests only.",
+          "source": "Synthetic test fixture — no real part data",
+          "lastUpdated": "2026-11-25",
+          "confidence": "unconfirmed"
+        },
+        {
+          "slug": "fixture-air-filter",
+          "name": "Fixture Air Filter",
+          "oemNumber": "FX-1102-A",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": [],
+          "aliases": ["air filter"],
+          "fitment": {
+            "years": [2021],
+            "engines": ["1.4L Turbo"],
+            "trims": ["Sport"],
+            "market": "US"
+          },
+          "fitmentNotes": "Synthetic record for schema tests only.",
+          "source": "Synthetic test fixture — no real part data",
+          "lastUpdated": "2026-11-25",
+          "confidence": "unconfirmed"
+        }
+      ]
+    },
+    {
+      "slug": "brakes",
+      "name": "Brakes",
+      "summary": "Synthetic brake records.",
+      "diagramLabel": "Synthetic brake fixture diagram",
+      "parts": [
+        {
+          "slug": "fixture-front-pads",
+          "name": "Fixture Front Pad Set",
+          "oemNumber": "FX-2201-B",
+          "alternateNumbers": [],
+          "supersedes": [],
+          "interchange": [],
+          "aliases": ["front pads"],
+          "fitment": {
+            "years": [2021],
+            "engines": ["1.4L Turbo"],
+            "trims": ["Base", "Sport"],
+            "market": "US"
+          },
+          "fitmentNotes": "Synthetic record for schema tests only.",
+          "source": "Synthetic test fixture — no real part data",
+          "lastUpdated": "2026-11-25",
+          "confidence": "unconfirmed"
+        }
+      ]
+    }
+  ]
+}

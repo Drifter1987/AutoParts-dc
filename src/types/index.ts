@@ -88,6 +88,25 @@ export interface PopularModelsResponse {
 
 export type PartConfidence = 'verified' | 'reference' | 'unconfirmed';
 
+export type CatalogRecordType = 'development' | 'production';
+
+/** How a catalog record may be used and redistributed. */
+export type CatalogRightsStatus = 'licensed' | 'unlicensed' | 'synthetic';
+
+export type CatalogRedisplay = 'public-web' | 'internal-only' | 'none-declared';
+
+export interface CatalogRights {
+  /** Who owns or licenses the record content. */
+  holder: string;
+  /** The license name, or an explicit statement that none exists. */
+  license: string;
+  status: CatalogRightsStatus;
+  /** What the declared rights permit, not what the build currently does. */
+  permittedRedisplay: CatalogRedisplay;
+  attribution: string;
+  restrictions: string[];
+}
+
 export interface PartFitment {
   years: number[];
   engines: string[];
@@ -127,6 +146,8 @@ export interface VehicleCatalog {
     year: number;
     generation: string;
     market: string;
+    recordType: CatalogRecordType;
+    rights: CatalogRights;
     engineOptions: string[];
     trimOptions: string[];
     source: string;
@@ -141,7 +162,15 @@ export interface CatalogPartWithContext extends CatalogPart {
   assemblySlug: string;
   assemblyName: string;
   assemblySummary: string;
+  brandSlug: string;
+  modelSlug: string;
+  year: number;
+  vehicleLabel: string;
 }
+
+/** A part row that may carry assembly/vehicle context when a page already knows it. */
+export type PartListItem = CatalogPart &
+  Partial<Omit<CatalogPartWithContext, keyof CatalogPart>>;
 
 export interface GarageVehicle {
   vin: string;

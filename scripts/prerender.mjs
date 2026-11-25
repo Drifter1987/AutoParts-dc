@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { chromium } from "@playwright/test";
 import { preview } from "vite";
@@ -15,18 +15,42 @@ const port = 4173;
 const brands = JSON.parse(
   await readFile(join(root, "src/data/brands.json"), "utf8"),
 ).brands;
-const civic = JSON.parse(
-  await readFile(join(root, "src/data/civic-2020-parts.json"), "utf8"),
+const catalogDir = join(root, "src/data/parts");
+const catalogFiles = (await readdir(catalogDir))
+  .filter((file) => file.endsWith(".json"))
+  .sort();
+const catalogs = await Promise.all(
+  catalogFiles.map(async (file) => {
+    const parsed = JSON.parse(await readFile(join(catalogDir, file), "utf8"));
+    const base = `catalog/${parsed.catalog.brandSlug}/${parsed.catalog.modelSlug}/${parsed.catalog.year}`;
+    return { ...parsed, base };
+  }),
 );
+const lastUpdated = catalogs
+  .map((catalog) => catalog.catalog.lastUpdated)
+  .sort()
+  .at(-1);
 
-const civicBase = `catalog/${civic.catalog.brandSlug}/${civic.catalog.modelSlug}/${civic.catalog.year}`;
-const catalogRoutes = [
-  civicBase,
-  ...civic.assemblies.map((assembly) => `${civicBase}/${assembly.slug}`),
-  ...civic.assemblies.flatMap((assembly) =>
-    assembly.parts.map((part) => `${civicBase}/${assembly.slug}/${part.slug}`),
+const vehicleRoutes = catalogs.flatMap((catalog) => [
+  {
+    path: catalog.base,
+    output: `${catalog.base}/index.html`,
+    waitFor: '[class*="assemblyCard"]',
+  },
+  ...catalog.assemblies.map((assembly) => ({
+    path: `${catalog.base}/${assembly.slug}`,
+    output: `${catalog.base}/${assembly.slug}/index.html`,
+    waitFor: '[class*="diagramSvg"]',
+  })),
+  ...catalog.assemblies.flatMap((assembly) =>
+    assembly.parts.map((part) => ({
+      path: `${catalog.base}/${assembly.slug}/${part.slug}`,
+      output: `${catalog.base}/${assembly.slug}/${part.slug}/index.html`,
+      waitFor: "h1",
+    })),
   ),
-];
+]);
+const catalogRoutes = vehicleRoutes.map((route) => route.path);
 
 const routes = [
   { path: "", output: "index.html", waitFor: '[class*="modelCard"]' },
@@ -41,23 +65,7 @@ const routes = [
     output: `catalog/${brand.slug}/index.html`,
     waitFor: '[class*="modelCard"]',
   })),
-  {
-    path: civicBase,
-    output: `${civicBase}/index.html`,
-    waitFor: '[class*="assemblyCard"]',
-  },
-  ...civic.assemblies.map((assembly) => ({
-    path: `${civicBase}/${assembly.slug}`,
-    output: `${civicBase}/${assembly.slug}/index.html`,
-    waitFor: '[class*="diagramSvg"]',
-  })),
-  ...civic.assemblies.flatMap((assembly) =>
-    assembly.parts.map((part) => ({
-      path: `${civicBase}/${assembly.slug}/${part.slug}`,
-      output: `${civicBase}/${assembly.slug}/${part.slug}/index.html`,
-      waitFor: "h1",
-    })),
-  ),
+  ...vehicleRoutes,
   { path: "search", output: "search/index.html", waitFor: "h1" },
   { path: "garage", output: "garage/index.html", waitFor: "h1" },
   { path: "tools", output: "tools/index.html", waitFor: "h1" },
@@ -134,7 +142,7 @@ try {
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ...sitemapPaths.map(
       (path) =>
-        `  <url><loc>${siteUrl}${path}</loc><lastmod>${civic.catalog.lastUpdated}</lastmod></url>`,
+        `  <url><loc>${siteUrl}${path}</loc><lastmod>${lastUpdated}</lastmod></url>`,
     ),
     "</urlset>",
     "",

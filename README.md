@@ -165,7 +165,7 @@ autoparts/
 │   ├── components/     # UI, VIN scanner, parts diagram, recall panel
 │   ├── pages/          # Home, VIN, catalog, model year, assembly, part, search, garage
 │   ├── services/       # NHTSA, recalls, parts lookup/search, garage, telemetry
-│   ├── data/           # brands.json, popular-models.json, civic-2020-parts.json
+│   ├── data/           # brands.json, popular-models.json, parts/*.json
 │   ├── types/          # TypeScript interfaces
 │   └── styles/         # Global and shared parts CSS
 ├── scripts/

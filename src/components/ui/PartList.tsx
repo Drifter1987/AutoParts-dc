@@ -2,12 +2,12 @@ import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { checkFitment } from '../../services/parts';
 import CopyButton from './CopyButton';
-import type { CatalogPart } from '../../types';
+import type { PartListItem } from '../../types';
 import styles from '../../styles/parts.module.css';
 
 interface PartListProps {
-  parts: (CatalogPart & { assemblyName?: string; assemblySlug?: string })[];
-  hrefForPart: (part: CatalogPart & { assemblySlug?: string }) => string;
+  parts: PartListItem[];
+  hrefForPart: (part: PartListItem) => string;
   engine?: string;
   trim?: string;
   hasVin?: boolean;
