@@ -4,6 +4,7 @@ import { Search, ChevronRight, Globe } from 'lucide-react';
 import { catalogApi } from '../services/api';
 import { usePageMetadata, breadcrumbJsonLd } from '../hooks/usePageMetadata';
 import brandsSeed from '../data/brands.json';
+import ComingSoon from '../components/ui/ComingSoon';
 import RollingNumber from '../components/ui/RollingNumber';
 import type { Brand, BrandsResponse } from '../types';
 import styles from './CatalogPage.module.css';
@@ -122,6 +123,14 @@ export default function CatalogPage() {
               Search by part number
             </Link>
           </div>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <ComingSoon title="Licensed coverage expansion">
+            Growing from one published vehicle to 25–50 vehicles requires a provider license for
+            consumer redisplay and scheduled bulk storage. No additional parts are invented while
+            that agreement is pending.
+          </ComingSoon>
         </div>
 
         {/* Search + filter bar */}

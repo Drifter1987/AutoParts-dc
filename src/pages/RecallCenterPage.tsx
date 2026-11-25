@@ -33,6 +33,7 @@ import {
   hasCompleteVehicleIdentity,
 } from '../services/vehicleIdentity';
 import { trackEvent } from '../services/telemetry';
+import ComingSoon from '../components/ui/ComingSoon';
 import type { RecallWatch } from '../types';
 import styles from '../styles/features.module.css';
 
@@ -253,6 +254,13 @@ export default function RecallCenterPage() {
             campaigns; they are not a VIN-specific open-recall determination. Always confirm with
             NHTSA or a dealer. No email or SMS is sent.
           </span>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <ComingSoon title="Background monitoring & email alerts">
+            Rechecks run only while this page is open. Monitoring saved VINs while the app is
+            closed, with email or SMS delivery, needs a scheduled backend and a messaging service.
+          </ComingSoon>
         </div>
 
         {notificationMessage && (

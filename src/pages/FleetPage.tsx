@@ -21,6 +21,7 @@ import {
   hasCompleteVehicleIdentity,
 } from '../services/vehicleIdentity';
 import { trackEvent } from '../services/telemetry';
+import ComingSoon from '../components/ui/ComingSoon';
 import RollingNumber from '../components/ui/RollingNumber';
 import type { FleetRow } from '../types';
 import styles from '../styles/features.module.css';
@@ -125,6 +126,13 @@ export default function FleetPage() {
             The campaign count is model-year data. NHTSA’s public recall API does not tell us whether
             a particular VIN has an open repair; use the per-VIN NHTSA link before scheduling work.
           </span>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <ComingSoon title="Fleet API & partner integrations">
+            The checker runs in this browser and exports a CSV. A hosted API for workshop or fleet
+            systems needs authentication, rate limits, and a backend.
+          </ComingSoon>
         </div>
 
         <section className={`card ${styles.panel}`} style={{ marginTop: 'var(--space-5)' }} aria-labelledby="fleet-input-title">

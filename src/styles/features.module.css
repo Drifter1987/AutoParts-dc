@@ -225,6 +225,20 @@
   margin-bottom: var(--space-2);
 }
 
+.comingSoon {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.comingSoonCompact {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
 .metric {
   font-family: var(--font-display);
   font-size: 1.6rem;

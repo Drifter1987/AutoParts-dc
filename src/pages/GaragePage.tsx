@@ -19,6 +19,7 @@ import {
   getVehicleIdentity,
   hasCompleteVehicleIdentity,
 } from '../services/vehicleIdentity';
+import ComingSoon from '../components/ui/ComingSoon';
 import GarageImportExportPanel from '../components/ui/GarageImportExportPanel';
 import type { GarageVehicle } from '../types';
 import styles from '../styles/parts.module.css';
@@ -350,6 +351,13 @@ export default function GaragePage() {
 
         <div style={{ marginTop: 'var(--space-6)' }}>
           <GarageImportExportPanel />
+        </div>
+
+        <div style={{ marginTop: 'var(--space-5)' }}>
+          <ComingSoon title="Accounts & cloud sync">
+            My Garage stays on this device. Moving vehicles between browsers under an account needs
+            a backend and a privacy decision, so no account or sync is offered yet.
+          </ComingSoon>
         </div>
 
         <div className={styles.notice} style={{ marginTop: 'var(--space-6)', marginBottom: 0 }}>

@@ -13,6 +13,7 @@ import {
   getVehiclePath,
 } from '../services/parts';
 import { trackEvent } from '../services/telemetry';
+import ComingSoon from '../components/ui/ComingSoon';
 import CopyButton from '../components/ui/CopyButton';
 import FitmentSupport from '../components/ui/FitmentSupport';
 import { formatFreshness, getRightsLabel } from '../services/provenance';
@@ -215,6 +216,21 @@ export default function PartPage() {
           trim={trim}
           vin={vin}
         />
+
+        <section
+          className={`card ${styles.detailCard}`}
+          style={{ marginTop: 'var(--space-5)' }}
+          aria-labelledby="price-availability-title"
+        >
+          <p className="eyebrow">Commerce</p>
+          <h2 id="price-availability-title" className={styles.h2} style={{ marginBottom: 'var(--space-3)' }}>
+            Price &amp; availability
+          </h2>
+          <ComingSoon title="Distributor feed" compact>
+            Live distributor pricing, stock, and dealer handoff are not connected. This record is
+            fitment and reference data only; verify the part with a dealer before ordering.
+          </ComingSoon>
+        </section>
 
         <div className={styles.detailGrid}>
           <div className={`card ${styles.detailCard}`}>
