@@ -59,11 +59,11 @@ export default function HomePage() {
       jsonLd: {
         '@type': 'WebSite',
         name: 'AutoParts',
-        url: 'https://len-golani.github.io/AutoParts-fb/',
+        url: 'https://drifter1987.github.io/AutoParts-dc/',
         description: 'Free VIN decoder and representative automotive parts catalog.',
         potentialAction: {
           '@type': 'SearchAction',
-          target: 'https://len-golani.github.io/AutoParts-fb/search?q={search_term_string}',
+          target: 'https://drifter1987.github.io/AutoParts-dc/search?q={search_term_string}',
           'query-input': 'required name=search_term_string',
         },
       },

@@ -11,7 +11,7 @@ export default defineConfig({
   retries: 2,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "https://len-golani.github.io/AutoParts-fb/",
+    baseURL: "https://drifter1987.github.io/AutoParts-dc/",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

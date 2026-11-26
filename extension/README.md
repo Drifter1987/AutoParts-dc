@@ -18,7 +18,7 @@ check digit validates, and then fetches:
 - `https://api.nhtsa.gov/recalls/recallsByVehicle?...` for model-year campaigns.
 
 It opens the full report at
-`https://len-golani.github.io/AutoParts-fb/vin?vin={VIN}&report=1`.
+`https://drifter1987.github.io/AutoParts-dc/vin?vin={VIN}&report=1`.
 
 ## Privacy and limits
 

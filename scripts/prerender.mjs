@@ -6,7 +6,7 @@ import { preview } from "vite";
 const root = process.cwd();
 const dist = join(root, "dist");
 const base = (process.env.PRERENDER_BASE || "/").replace(/\/?$/, "/");
-const siteUrl = (process.env.PRERENDER_SITE_URL || "https://len-golani.github.io/AutoParts-fb/").replace(
+const siteUrl = (process.env.PRERENDER_SITE_URL || "https://drifter1987.github.io/AutoParts-dc/").replace(
   /\/?$/,
   "/",
 );

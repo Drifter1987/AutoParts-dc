@@ -241,8 +241,8 @@ export default function Layout() {
             <Link to="/tools">Tools</Link>
             <Link to="/roadmap">Roadmap</Link>
             <Link to="/tools#privacy">Privacy</Link>
-            <a href="https://github.com/len-golani/AutoParts-fb/issues" target="_blank" rel="noreferrer">Issues</a>
-            <a href="https://github.com/len-golani/AutoParts-fb" target="_blank" rel="noreferrer">Source</a>
+            <a href="https://github.com/Drifter1987/AutoParts-dc/issues" target="_blank" rel="noreferrer">Issues</a>
+            <a href="https://github.com/Drifter1987/AutoParts-dc" target="_blank" rel="noreferrer">Source</a>
           </div>
         </div>
       </footer>

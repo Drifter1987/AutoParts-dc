@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 import { stubGoogleFonts } from "./google-fonts-stubs";
 import { stubNhtsa } from "./nhtsa-stubs";
 
-const PAGES_URL = "https://len-golani.github.io/AutoParts-fb/";
-const BASE_PATH = "/AutoParts-fb/";
+const PAGES_URL = "https://drifter1987.github.io/AutoParts-dc/";
+const BASE_PATH = "/AutoParts-dc/";
 
 // The live Pages build now carries the P1-04 copy. Set
 // PAGES_EXPECT_PRE_P1_04=1 only when checking an older deployment.

@@ -5,7 +5,7 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
-const BASE = "https://len-golani.github.io/AutoParts-fb/";
+const BASE = "https://drifter1987.github.io/AutoParts-dc/";
 const RUNS = Number(process.argv[2] || 3);
 const OUT = "test-results/perf-audit-results.json";
 

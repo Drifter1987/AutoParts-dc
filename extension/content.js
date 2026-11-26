@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const APP_BASE = 'https://len-golani.github.io/AutoParts-fb';
+  const APP_BASE = 'https://drifter1987.github.io/AutoParts-dc';
   const VIN_RE = /\b[A-HJ-NPR-Z0-9]{17}\b/g;
   const CHECK_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
   const TRANSLITERATION = {

@@ -36,14 +36,14 @@ jobs:
         run: npm ci
 
       - name: Build for GitHub Pages
-        run: npm run build -- --base=/AutoParts-fb/
+        run: npm run build -- --base=/AutoParts-dc/
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Prerender key routes
         env:
-          PRERENDER_BASE: /AutoParts-fb/
+          PRERENDER_BASE: /AutoParts-dc/
         run: npm run prerender
 
       - name: Configure Pages

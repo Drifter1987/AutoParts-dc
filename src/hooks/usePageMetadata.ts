@@ -7,7 +7,7 @@ export interface PageMetadataOptions {
   noindex?: boolean;
 }
 
-const FALLBACK_SITE_URL = 'https://len-golani.github.io/AutoParts-fb';
+const FALLBACK_SITE_URL = 'https://drifter1987.github.io/AutoParts-dc';
 
 /** Build a public, base-path-correct URL independent of the prerender host. */
 export function siteUrl(path = '/'): string {

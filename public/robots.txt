@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://len-golani.github.io/AutoParts-fb/sitemap.xml
+Sitemap: https://drifter1987.github.io/AutoParts-dc/sitemap.xml
